@@ -69,7 +69,9 @@
     --shadow: rgba(0, 0, 0, 0.4);
   }
   html { scroll-padding-top: env(safe-area-inset-top, 0px); }
-  * { box-sizing: border-box; }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  button, a, input, select, [contenteditable] { touch-action: manipulation; }
+  button:focus, input:focus, select:focus { outline-color: var(--accent); }
   html, body {
     height: 100%;
     margin: 0;
@@ -327,6 +329,7 @@
     transition: transform 0.12s ease, opacity 0.12s ease;
   }
   .btn:active { transform: scale(0.98); opacity: 0.9; }
+  .btn:disabled { opacity: 0.55; cursor: default; }
   .btn.primary { background: var(--accent); color: var(--accent-ink); }
   .btn.danger { background: var(--danger-bg); color: var(--danger); }
   .btn.ghost { background: transparent; color: var(--ink-soft); }
@@ -1124,24 +1127,64 @@
     return messages[code] || "Une erreur est survenue. Réessaie.";
   }
 
-  document.getElementById('btnSeConnecter').addEventListener('click', function () {
+  var authEnCours = false;
+  function lancerAuth(action, libelleBouton, libelleChargement) {
+    if (authEnCours) return;
     clearAuthError();
     var email = document.getElementById('authEmail').value.trim();
     var password = document.getElementById('authPassword').value;
     if (!email || !password) { showAuthError("Remplis l'e-mail et le mot de passe."); return; }
-    auth.signInWithEmailAndPassword(email, password).catch(function (err) {
-      showAuthError(traduireErreurAuth(err.code));
+
+    var btnConnexion = document.getElementById('btnSeConnecter');
+    var btnCompte = document.getElementById('btnCreerCompte');
+    authEnCours = true;
+    btnConnexion.disabled = true;
+    btnCompte.disabled = true;
+    var texteOriginal = action === 'connexion' ? btnConnexion.textContent : btnCompte.textContent;
+    if (action === 'connexion') btnConnexion.textContent = libelleChargement;
+    else btnCompte.textContent = libelleChargement;
+
+    var termine = false;
+    var delaiDepasse = setTimeout(function () {
+      if (termine) return;
+      termine = true;
+      authEnCours = false;
+      btnConnexion.disabled = false;
+      btnCompte.disabled = false;
+      btnConnexion.textContent = 'Se connecter';
+      btnCompte.textContent = 'Créer un compte';
+      showAuthError("Ça ne répond pas. Vérifie ta connexion internet et réessaie.");
+    }, 12000);
+
+    function finir() {
+      if (termine) return;
+      termine = true;
+      clearTimeout(delaiDepasse);
+      authEnCours = false;
+      btnConnexion.disabled = false;
+      btnCompte.disabled = false;
+      btnConnexion.textContent = 'Se connecter';
+      btnCompte.textContent = 'Créer un compte';
+    }
+
+    var promesse = action === 'connexion'
+      ? auth.signInWithEmailAndPassword(email, password)
+      : auth.createUserWithEmailAndPassword(email, password);
+
+    promesse.then(function () {
+      finir();
+    }).catch(function (err) {
+      finir();
+      showAuthError(traduireErreurAuth(err && err.code));
     });
+  }
+
+  document.getElementById('btnSeConnecter').addEventListener('click', function () {
+    lancerAuth('connexion', 'Se connecter', 'Connexion...');
   });
 
   document.getElementById('btnCreerCompte').addEventListener('click', function () {
-    clearAuthError();
-    var email = document.getElementById('authEmail').value.trim();
-    var password = document.getElementById('authPassword').value;
-    if (!email || !password) { showAuthError("Remplis l'e-mail et le mot de passe."); return; }
-    auth.createUserWithEmailAndPassword(email, password).catch(function (err) {
-      showAuthError(traduireErreurAuth(err.code));
-    });
+    lancerAuth('creation', 'Créer un compte', 'Création...');
   });
 
   document.getElementById('btnDeconnexion').addEventListener('click', function () {
