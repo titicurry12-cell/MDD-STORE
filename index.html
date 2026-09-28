@@ -1,0 +1,1202 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>MDD Store</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="MDD">
+<meta name="theme-color" content="#211C2E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,500&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    box-sizing: border-box;
+    --bg: #F2EBDC;
+    --bg-raised: #FBF7EE;
+    --ink: #211C2E;
+    --ink-soft: #756C82;
+    --line: #E1D5B8;
+    --accent: #AD7A26;
+    --accent-ink: #211C2E;
+    --femme: #B85A78;
+    --homme: #2F5A82;
+    --chip-ink: rgba(20, 14, 10, 0.82);
+    --danger: #A13D2E;
+    --danger-bg: #F6E7E2;
+    --tab-bg: #EBE1C8;
+    --shadow: rgba(33, 28, 46, 0.10);
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #17151F;
+      --bg-raised: #221E2C;
+      --ink: #F3ECDD;
+      --ink-soft: #A79FB0;
+      --line: #37324A;
+      --accent: #D9A54B;
+      --accent-ink: #211705;
+      --femme: #D98AA8;
+      --homme: #6FA0C9;
+      --chip-ink: rgba(18, 13, 8, 0.85);
+      --danger: #E2857A;
+      --danger-bg: #3A2420;
+      --tab-bg: #221E2C;
+      --shadow: rgba(0, 0, 0, 0.4);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #17151F;
+    --bg-raised: #221E2C;
+    --ink: #F3ECDD;
+    --ink-soft: #A79FB0;
+    --line: #37324A;
+    --accent: #D9A54B;
+    --accent-ink: #211705;
+    --femme: #D98AA8;
+    --homme: #6FA0C9;
+    --chip-ink: rgba(18, 13, 8, 0.85);
+    --danger: #E2857A;
+    --danger-bg: #3A2420;
+    --tab-bg: #221E2C;
+    --shadow: rgba(0, 0, 0, 0.4);
+  }
+  html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+  * { box-sizing: border-box; }
+  html, body {
+    height: 100%;
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Work Sans', -apple-system, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  h1, h2, h3, .display {
+    font-family: 'Newsreader', Georgia, serif;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+    margin: 0;
+  }
+  #app { display: flex; flex-direction: column; height: 100%; max-width: 640px; margin: 0 auto; }
+
+  header.top {
+    padding: calc(env(safe-area-inset-top, 0px) + 18px) 20px 14px;
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  header.top .name-wrap { flex: 1; min-width: 0; }
+  header.top h1 {
+    font-size: 1.5rem;
+    line-height: 1.15;
+    cursor: text;
+    outline: none;
+    overflow-wrap: break-word;
+  }
+  header.top .tagline { color: var(--ink-soft); font-size: 0.8rem; margin-top: 2px; }
+  header.top {
+    background-image: repeating-linear-gradient(to right, var(--accent) 0, var(--accent) 6px, transparent 6px, transparent 13px);
+    background-position: bottom;
+    background-size: 100% 2px;
+    background-repeat: no-repeat;
+  }
+
+  main { flex: 1; overflow-y: auto; padding: 0 20px calc(90px + env(safe-area-inset-bottom, 0px)); -webkit-overflow-scrolling: touch; }
+  .view { display: none; }
+  .view.active { display: block; animation: rise 0.22s ease; }
+  @keyframes rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+  /* Dashboard */
+  .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 14px 0 22px; }
+  .stat-card {
+    background: var(--bg-raised);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 14px 16px;
+  }
+  .stat-card .label { font-size: 0.72rem; color: var(--ink-soft); text-transform: none; }
+  .stat-card .value { font-family: 'Newsreader', serif; font-size: 1.5rem; margin-top: 4px; }
+  .stat-card.wide { grid-column: 1 / -1; }
+  .stat-card.accent { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+  .stat-card.accent .label { color: var(--accent-ink); opacity: 0.75; }
+
+  section.block { margin-bottom: 26px; }
+  section.block h2 {
+    font-size: 1.05rem;
+    margin-bottom: 10px;
+    padding-left: 11px;
+    border-left: 3px solid var(--accent);
+  }
+  .empty {
+    color: var(--ink-soft);
+    font-size: 0.88rem;
+    padding: 22px 4px;
+    border: 1px dashed var(--line);
+    border-radius: 12px;
+    text-align: center;
+  }
+
+  .mini-list { display: flex; flex-direction: column; gap: 8px; }
+  .mini-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 10px 12px;
+    background: var(--bg-raised);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    font-size: 0.9rem;
+  }
+  .mini-row .who { display: flex; flex-direction: column; }
+  .mini-row .who span:last-child { font-size: 0.76rem; color: var(--ink-soft); }
+  .mini-row .amt { font-weight: 600; }
+
+  /* Stock list */
+  .filter-row { display: flex; gap: 8px; margin: 14px 0; }
+  .filter-btn {
+    flex: 1;
+    padding: 8px 10px;
+    border-radius: 999px;
+    border: 1px solid var(--line);
+    background: var(--bg-raised);
+    color: var(--ink);
+    font-family: 'Work Sans', sans-serif;
+    font-size: 0.82rem;
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease, transform 0.12s ease;
+  }
+  .filter-btn:active { transform: scale(0.96); }
+  .filter-btn.active { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+  .filter-btn.active[data-filter="Femme"] { background: var(--femme); border-color: var(--femme); color: var(--chip-ink); }
+  .filter-btn.active[data-filter="Homme"] { background: var(--homme); border-color: var(--homme); color: var(--chip-ink); }
+
+  .produit-card {
+    background: var(--bg-raised);
+    border: 1px solid var(--line);
+    border-left: 4px solid var(--line);
+    border-radius: 12px;
+    padding: 13px 15px;
+    margin-bottom: 10px;
+    cursor: pointer;
+    transition: transform 0.12s ease;
+  }
+  .produit-card:active { transform: scale(0.98); }
+  .produit-card.cat-femme { border-left-color: var(--femme); }
+  .produit-card.cat-homme { border-left-color: var(--homme); }
+  .produit-card .row1 { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+  .produit-card .nom { font-weight: 600; font-size: 0.98rem; }
+  .produit-card .meta { color: var(--ink-soft); font-size: 0.8rem; margin-top: 2px; }
+  .produit-card .qty {
+    font-family: 'Newsreader', serif;
+    font-size: 1.15rem;
+    white-space: nowrap;
+  }
+  .produit-card .qty.low { color: var(--danger); }
+  .produit-card .prices { display: flex; gap: 14px; margin-top: 8px; font-size: 0.78rem; color: var(--ink-soft); }
+
+  .cat-tag {
+    display: inline-block;
+    font-size: 0.68rem;
+    font-weight: 600;
+    padding: 1px 7px;
+    border-radius: 999px;
+    color: var(--chip-ink);
+    margin-right: 5px;
+    vertical-align: middle;
+  }
+  .cat-tag.femme { background: var(--femme); }
+  .cat-tag.homme { background: var(--homme); }
+
+  .fab {
+    position: fixed;
+    right: calc(20px + max(0px, (100vw - 640px) / 2));
+    bottom: calc(90px + env(safe-area-inset-bottom, 0px));
+    width: 54px; height: 54px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: var(--accent-ink);
+    border: none;
+    font-size: 1.6rem;
+    box-shadow: 0 6px 16px var(--shadow);
+    cursor: pointer;
+    display: none;
+    align-items: center; justify-content: center;
+    z-index: 20;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+  .fab:active { transform: scale(0.92); box-shadow: 0 3px 10px var(--shadow); }
+
+  /* Bottom nav */
+  nav.tabs {
+    display: flex;
+    border-top: 1px solid var(--line);
+    background: var(--bg-raised);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    position: relative;
+    z-index: 15;
+  }
+  nav.tabs button {
+    flex: 1;
+    background: none;
+    border: none;
+    padding: 12px 4px 10px;
+    font-family: 'Work Sans', sans-serif;
+    font-size: 0.72rem;
+    color: var(--ink-soft);
+    cursor: pointer;
+    display: flex; flex-direction: column; align-items: center; gap: 4px;
+    transition: color 0.15s ease;
+  }
+  nav.tabs button:active { opacity: 0.6; }
+  nav.tabs button .dot { width: 5px; height: 5px; border-radius: 50%; background: transparent; transition: transform 0.2s ease, background 0.2s ease; }
+  nav.tabs button.active { color: var(--ink); font-weight: 600; }
+  nav.tabs button.active .dot { background: var(--accent); transform: scale(1.6); }
+
+  /* Modal / sheet */
+  .sheet-overlay {
+    position: fixed; inset: 0;
+    background: rgba(10, 8, 6, 0.5);
+    display: flex;
+    align-items: flex-end;
+    z-index: 30;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+  }
+  .sheet-overlay.open { opacity: 1; pointer-events: auto; }
+  .sheet {
+    background: var(--bg-raised);
+    width: 100%;
+    max-width: 640px;
+    margin: 0 auto;
+    border-radius: 20px 20px 0 0;
+    padding: 20px 20px calc(24px + env(safe-area-inset-bottom, 0px));
+    max-height: 85vh;
+    overflow-y: auto;
+    transform: translateY(24px);
+    transition: transform 0.25s cubic-bezier(.2,.9,.3,1);
+  }
+  .sheet-overlay.open .sheet { transform: translateY(0); }
+  .sheet h3 { font-size: 1.2rem; margin-bottom: 14px; }
+  .field { margin-bottom: 12px; }
+  .field label { display: block; font-size: 0.76rem; color: var(--ink-soft); margin-bottom: 5px; }
+  .field input, .field select {
+    width: 100%;
+    padding: 11px 12px;
+    border-radius: 10px;
+    border: 1px solid var(--line);
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Work Sans', sans-serif;
+    font-size: 0.95rem;
+  }
+  .field-row { display: flex; gap: 10px; }
+  .field-row .field { flex: 1; }
+  .seg { display: flex; gap: 8px; }
+  .seg button {
+    flex: 1;
+    padding: 10px;
+    border-radius: 10px;
+    border: 1px solid var(--line);
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Work Sans', sans-serif;
+    cursor: pointer;
+  }
+  .seg button.active { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+  #segCategorie button.active[data-cat="Femme"] { background: var(--femme); border-color: var(--femme); color: var(--chip-ink); }
+  #segCategorie button.active[data-cat="Homme"] { background: var(--homme); border-color: var(--homme); color: var(--chip-ink); }
+
+  .btn {
+    display: block;
+    width: 100%;
+    padding: 13px;
+    border-radius: 12px;
+    border: none;
+    font-family: 'Work Sans', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 6px;
+    transition: transform 0.12s ease, opacity 0.12s ease;
+  }
+  .btn:active { transform: scale(0.98); opacity: 0.9; }
+  .btn.primary { background: var(--accent); color: var(--accent-ink); }
+  .btn.danger { background: var(--danger-bg); color: var(--danger); }
+  .btn.ghost { background: transparent; color: var(--ink-soft); }
+
+  .total-line {
+    display: flex; justify-content: space-between; align-items: baseline;
+    padding: 12px 0; border-top: 1px dashed var(--line); margin-top: 8px;
+  }
+  .total-line .num { font-family: 'Newsreader', serif; font-size: 1.4rem; }
+
+  .toast {
+    position: fixed;
+    top: calc(env(safe-area-inset-top, 0px) + 14px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--ink);
+    color: var(--bg);
+    padding: 9px 16px;
+    border-radius: 999px;
+    font-size: 0.82rem;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s ease;
+    z-index: 50;
+    white-space: nowrap;
+  }
+  .toast.show { opacity: 1; }
+
+  ::selection { background: var(--accent); color: var(--chip-ink); }
+</style>
+</head>
+<body>
+<div id="app" style="display:none;">
+
+  <header class="top">
+    <div class="name-wrap">
+      <h1 id="shopName" contenteditable="true" spellcheck="false">MDD Store</h1>
+      <div class="tagline" id="dateToday"></div>
+    </div>
+    <button type="button" id="btnDeconnexion" class="btn ghost" style="width:auto; padding:6px 10px; font-size:0.72rem; margin-top:0;">Déconnexion</button>
+  </header>
+
+  <main>
+
+    <!-- TABLEAU DE BORD -->
+    <section class="view active" id="view-dashboard">
+      <div class="filter-row" id="periodeRow">
+        <button class="filter-btn active" data-periode="jour">Jour</button>
+        <button class="filter-btn" data-periode="semaine">Semaine</button>
+        <button class="filter-btn" data-periode="mois">Mois</button>
+        <button class="filter-btn" data-periode="tout">Depuis le début</button>
+      </div>
+      <div class="stat-grid">
+        <div class="stat-card accent wide">
+          <div class="label">Bénéfice net</div>
+          <div class="value" id="statBeneficeNetJour">0 GNF</div>
+        </div>
+        <div class="stat-card">
+          <div class="label">Ventes</div>
+          <div class="value" id="statVentesJour">0 GNF</div>
+        </div>
+        <div class="stat-card">
+          <div class="label">Dépenses</div>
+          <div class="value" id="statDepensesJour">0 GNF</div>
+        </div>
+        <div class="stat-card">
+          <div class="label">Articles en stock</div>
+          <div class="value" id="statArticles">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="label">Valeur du stock</div>
+          <div class="value" id="statValeurStock">0 GNF</div>
+        </div>
+      </div>
+
+      <section class="block">
+        <h2>Stock bas</h2>
+        <div class="mini-list" id="lowStockList"></div>
+      </section>
+
+      <section class="block">
+        <h2>Dernières ventes</h2>
+        <div class="mini-list" id="recentSalesList"></div>
+      </section>
+
+      <section class="block">
+        <h2>Sauvegarde</h2>
+        <button class="btn ghost" id="btnExporter" style="border:1px solid var(--line); text-align:center;">Exporter mes données (fichier de secours)</button>
+        <button class="btn ghost" id="btnImporter" style="border:1px solid var(--line); text-align:center;">Restaurer une sauvegarde</button>
+        <input type="file" id="inputImporter" accept="application/json" style="display:none;">
+      </section>
+    </section>
+
+    <!-- STOCK -->
+    <section class="view" id="view-stock">
+      <div class="filter-row">
+        <button class="filter-btn active" data-filter="Tout">Tout</button>
+        <button class="filter-btn" data-filter="Femme">Femme</button>
+        <button class="filter-btn" data-filter="Homme">Homme</button>
+      </div>
+      <div id="stockList"></div>
+    </section>
+
+    <!-- VENTE -->
+    <section class="view" id="view-vente">
+      <section class="block">
+        <h2>Enregistrer une vente</h2>
+        <div class="field">
+          <label for="venteProduit">Article</label>
+          <select id="venteProduit"></select>
+          <button type="button" class="btn ghost" id="btnNouvelArticleDepuisVente" style="text-align:left; padding-left:0; margin-top:2px;">+ Ajouter un nouvel article</button>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label for="venteQte">Quantité</label>
+            <input type="number" id="venteQte" min="1" value="1">
+          </div>
+          <div class="field">
+            <label for="ventePrix">Prix unitaire (GNF)</label>
+            <input type="number" id="ventePrix" min="0">
+          </div>
+        </div>
+        <div class="total-line">
+          <span>Total</span>
+          <span class="num" id="venteTotal">0 GNF</span>
+        </div>
+        <button class="btn primary" id="btnEnregistrerVente">Enregistrer la vente</button>
+      </section>
+    </section>
+
+    <!-- DEPENSES -->
+    <section class="view" id="view-depenses">
+      <section class="block">
+        <h2>Ajouter une dépense</h2>
+        <div class="field">
+          <label for="depLibelle">Libellé</label>
+          <input type="text" id="depLibelle" placeholder="Ex : Transport marchandise, Loyer...">
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label for="depCategorie">Catégorie</label>
+            <select id="depCategorie">
+              <option>Marchandise</option>
+              <option>Transport</option>
+              <option>Loyer</option>
+              <option>Facture</option>
+              <option>Autre</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="depMontant">Montant (GNF)</label>
+            <input type="number" id="depMontant" min="0">
+          </div>
+        </div>
+        <button class="btn primary" id="btnEnregistrerDepense">Enregistrer la dépense</button>
+      </section>
+
+      <section class="block">
+        <h2>Dépenses récentes</h2>
+        <div id="depensesList"></div>
+      </section>
+    </section>
+
+    <!-- HISTORIQUE -->
+    <section class="view" id="view-historique">
+      <div id="historiqueList"></div>
+    </section>
+
+  </main>
+
+  <button class="fab" id="fabAjouter" title="Ajouter un article">+</button>
+
+  <nav class="tabs">
+    <button class="active" data-view="dashboard"><span class="dot"></span>Tableau de bord</button>
+    <button data-view="stock"><span class="dot"></span>Stock</button>
+    <button data-view="vente"><span class="dot"></span>Vente</button>
+    <button data-view="depenses"><span class="dot"></span>Dépenses</button>
+    <button data-view="historique"><span class="dot"></span>Historique</button>
+  </nav>
+
+</div>
+
+<!-- ECRAN DE CONNEXION -->
+<div id="authScreen" style="min-height:100%; display:flex; align-items:center; justify-content:center; padding:24px;">
+  <div style="width:100%; max-width:400px;">
+    <h1 class="display" style="font-size:1.8rem; text-align:center; margin-bottom:4px;">MDD Store</h1>
+    <p style="text-align:center; color:var(--ink-soft); font-size:0.85rem; margin-bottom:24px;">Connecte-toi pour accéder à ton espace</p>
+
+    <div class="field">
+      <label for="authEmail">Adresse e-mail</label>
+      <input type="email" id="authEmail" autocomplete="email" placeholder="toi@exemple.com">
+    </div>
+    <div class="field">
+      <label for="authPassword">Mot de passe</label>
+      <input type="password" id="authPassword" autocomplete="current-password" placeholder="6 caractères minimum">
+    </div>
+    <div id="authError" style="color:var(--danger); font-size:0.82rem; margin-bottom:8px; display:none;"></div>
+
+    <button class="btn primary" id="btnSeConnecter">Se connecter</button>
+    <button class="btn ghost" id="btnCreerCompte" style="text-align:center; border:1px solid var(--line);">Créer un compte</button>
+  </div>
+</div>
+
+<!-- SHEET : ajouter / modifier produit -->
+<div class="sheet-overlay" id="sheetProduit">
+  <div class="sheet">
+    <h3 id="sheetProduitTitle">Nouvel article</h3>
+    <div class="field">
+      <label>Catégorie</label>
+      <div class="seg" id="segCategorie">
+        <button type="button" data-cat="Femme" class="active">Femme</button>
+        <button type="button" data-cat="Homme">Homme</button>
+      </div>
+    </div>
+    <div class="field">
+      <label for="fNom">Nom de l'article</label>
+      <input type="text" id="fNom" placeholder="Ex : Robe wax, Chemise slim...">
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label for="fTaille">Taille</label>
+        <input type="text" id="fTaille" placeholder="M, 42...">
+      </div>
+      <div class="field">
+        <label for="fCouleur">Couleur</label>
+        <input type="text" id="fCouleur" placeholder="Bleu...">
+      </div>
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label for="fPrixAchat">Prix d'achat (GNF)</label>
+        <input type="number" id="fPrixAchat" min="0">
+      </div>
+      <div class="field">
+        <label for="fPrixVente">Prix de vente (GNF)</label>
+        <input type="number" id="fPrixVente" min="0">
+      </div>
+    </div>
+    <div class="field">
+      <label for="fQuantite">Quantité en stock</label>
+      <input type="number" id="fQuantite" min="0" value="1">
+    </div>
+    <button class="btn primary" id="btnSauverProduit">Enregistrer</button>
+    <button class="btn danger" id="btnSupprimerProduit" style="display:none;">Supprimer l'article</button>
+    <button class="btn ghost" id="btnFermerSheet">Annuler</button>
+  </div>
+</div>
+
+
+<div class="sheet-overlay" id="confirmOverlay">
+  <div class="sheet">
+    <h3 id="confirmMessage">Confirmer ?</h3>
+    <button class="btn danger" id="confirmYesBtn">Oui, confirmer</button>
+    <button class="btn ghost" id="confirmNoBtn">Annuler</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+<script>
+(function () {
+  var firebaseConfig = {
+    apiKey: "AIzaSyCh9GD3r7zSQ6Rf5nDV3QO9ATTTdWdfOt8",
+    authDomain: "mdd-store.firebaseapp.com",
+    projectId: "mdd-store",
+    storageBucket: "mdd-store.firebasestorage.app",
+    messagingSenderId: "864658975890",
+    appId: "1:864658975890:web:fc621211dac18a0f978a4b"
+  };
+  firebase.initializeApp(firebaseConfig);
+  var auth = firebase.auth();
+  var firestore = firebase.firestore();
+  var unsubscribers = [];
+
+  var state = { produits: [], ventes: [], depenses: [], stockFilter: 'Tout', periode: 'jour', editingId: null };
+  var db = null;
+
+  function showConfirm(message, onYes) {
+    var overlay = document.getElementById('confirmOverlay');
+    var yesBtn = document.getElementById('confirmYesBtn');
+    var noBtn = document.getElementById('confirmNoBtn');
+    document.getElementById('confirmMessage').textContent = message;
+    overlay.classList.add('open');
+
+    function cleanup() {
+      overlay.classList.remove('open');
+      yesBtn.removeEventListener('click', onYesClick);
+      noBtn.removeEventListener('click', onNoClick);
+      overlay.removeEventListener('click', onOverlayClick);
+    }
+    function onYesClick() { cleanup(); onYes(); }
+    function onNoClick() { cleanup(); }
+    function onOverlayClick(e) { if (e.target === overlay) cleanup(); }
+
+    yesBtn.addEventListener('click', onYesClick);
+    noBtn.addEventListener('click', onNoClick);
+    overlay.addEventListener('click', onOverlayClick);
+  }
+
+  function toast(msg) {
+    var t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(function () { t.classList.remove('show'); }, 1800);
+  }
+
+  var statAnimCache = {};
+  function setStatAnimated(elId, targetValue) {
+    var el = document.getElementById(elId);
+    var from = statAnimCache[elId] || 0;
+    var to = targetValue;
+    statAnimCache[elId] = to;
+    if (from === to) { el.textContent = fmt(to); return; }
+    var start = null;
+    var duration = 350;
+    function step(ts) {
+      if (!start) start = ts;
+      var progress = Math.min((ts - start) / duration, 1);
+      var eased = 1 - Math.pow(1 - progress, 3);
+      var current = from + (to - from) * eased;
+      el.textContent = fmt(current);
+      if (progress < 1) requestAnimationFrame(step);
+      else el.textContent = fmt(to);
+    }
+    requestAnimationFrame(step);
+  }
+
+  function fmt(n) {
+    n = Math.round(n || 0);
+    return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ' GNF';
+  }
+
+  function todayStr() {
+    var d = new Date();
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  }
+
+  document.getElementById('dateToday').textContent = new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
+
+  // ---------- NAV ----------
+  var views = ['dashboard', 'stock', 'vente', 'depenses', 'historique'];
+  var fabBtn = document.getElementById('fabAjouter');
+  document.querySelectorAll('nav.tabs button').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var v = btn.getAttribute('data-view');
+      views.forEach(function (name) {
+        document.getElementById('view-' + name).classList.toggle('active', name === v);
+      });
+      document.querySelectorAll('nav.tabs button').forEach(function (b) { b.classList.toggle('active', b === btn); });
+      if (v === 'vente') fillVenteSelect();
+      fabBtn.style.display = (v === 'stock') ? 'flex' : 'none';
+    });
+  });
+
+  // ---------- SHOP NAME ----------
+  var shopNameEl = document.getElementById('shopName');
+  shopNameEl.addEventListener('blur', function () {
+    var name = shopNameEl.textContent.trim() || 'MDD Store';
+    shopNameEl.textContent = name;
+    if (db) db.doc('reglages/boutique').set({ nom: name }).catch(function () {});
+  });
+
+  // ---------- RENDER: STOCK ----------
+  function renderStock() {
+    var list = document.getElementById('stockList');
+    var items = state.produits.filter(function (p) {
+      return state.stockFilter === 'Tout' || p.categorie === state.stockFilter;
+    }).sort(function (a, b) { return (a.nom || '').localeCompare(b.nom || ''); });
+
+    if (items.length === 0) {
+      list.innerHTML = '<div class="empty">Aucun article ici pour l\'instant. Touchez le bouton + pour en ajouter un.</div>';
+      return;
+    }
+    list.innerHTML = items.map(function (p) {
+      var low = (p.quantite || 0) <= 2;
+      var catClass = p.categorie === 'Femme' ? 'cat-femme' : 'cat-homme';
+      var catTagClass = p.categorie === 'Femme' ? 'femme' : 'homme';
+      return '<div class="produit-card ' + catClass + '" data-id="' + p.id + '">' +
+        '<div class="row1">' +
+          '<div><div class="nom">' + escapeHtml(p.nom) + '</div>' +
+          '<div class="meta"><span class="cat-tag ' + catTagClass + '">' + escapeHtml(p.categorie) + '</span>' + (p.taille ? 'Taille ' + escapeHtml(p.taille) : '') + (p.couleur ? ' · ' + escapeHtml(p.couleur) : '') + '</div></div>' +
+          '<div class="qty' + (low ? ' low' : '') + '">' + (p.quantite || 0) + '</div>' +
+        '</div>' +
+        '<div class="prices"><span>Achat ' + fmt(p.prixAchat) + '</span><span>Vente ' + fmt(p.prixVente) + '</span></div>' +
+      '</div>';
+    }).join('');
+
+    list.querySelectorAll('.produit-card').forEach(function (card) {
+      card.addEventListener('click', function () {
+        openProduitSheet(card.getAttribute('data-id'));
+      });
+    });
+  }
+
+  document.querySelectorAll('.filter-btn').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      state.stockFilter = btn.getAttribute('data-filter');
+      document.querySelectorAll('.filter-btn').forEach(function (b) { b.classList.toggle('active', b === btn); });
+      renderStock();
+    });
+  });
+
+  function escapeHtml(s) {
+    return (s || '').toString().replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+
+  // ---------- SHEET PRODUIT ----------
+  var sheetProduit = document.getElementById('sheetProduit');
+  var segCat = document.getElementById('segCategorie');
+  var currentCat = 'Femme';
+
+  segCat.querySelectorAll('button').forEach(function (b) {
+    b.addEventListener('click', function () {
+      currentCat = b.getAttribute('data-cat');
+      segCat.querySelectorAll('button').forEach(function (x) { x.classList.toggle('active', x === b); });
+    });
+  });
+
+  function openProduitSheet(id) {
+    state.editingId = id || null;
+    var p = id ? state.produits.find(function (x) { return x.id === id; }) : null;
+    document.getElementById('sheetProduitTitle').textContent = p ? 'Modifier l\'article' : 'Nouvel article';
+    document.getElementById('fNom').value = p ? p.nom : '';
+    document.getElementById('fTaille').value = p ? (p.taille || '') : '';
+    document.getElementById('fCouleur').value = p ? (p.couleur || '') : '';
+    document.getElementById('fPrixAchat').value = p ? p.prixAchat : '';
+    document.getElementById('fPrixVente').value = p ? p.prixVente : '';
+    document.getElementById('fQuantite').value = p ? p.quantite : 1;
+    currentCat = p ? p.categorie : 'Femme';
+    segCat.querySelectorAll('button').forEach(function (x) {
+      x.classList.toggle('active', x.getAttribute('data-cat') === currentCat);
+    });
+    document.getElementById('btnSupprimerProduit').style.display = p ? 'block' : 'none';
+    sheetProduit.classList.add('open');
+  }
+  function closeProduitSheet() { sheetProduit.classList.remove('open'); state.editingId = null; }
+
+  document.getElementById('fabAjouter').addEventListener('click', function () { openProduitSheet(null); });
+  document.getElementById('btnFermerSheet').addEventListener('click', closeProduitSheet);
+  sheetProduit.addEventListener('click', function (e) { if (e.target === sheetProduit) closeProduitSheet(); });
+
+  document.getElementById('btnSauverProduit').addEventListener('click', function () {
+    var nom = document.getElementById('fNom').value.trim();
+    if (!nom) { toast('Donnez un nom à l\'article'); return; }
+    var data = {
+      nom: nom,
+      categorie: currentCat,
+      taille: document.getElementById('fTaille').value.trim(),
+      couleur: document.getElementById('fCouleur').value.trim(),
+      prixAchat: Number(document.getElementById('fPrixAchat').value) || 0,
+      prixVente: Number(document.getElementById('fPrixVente').value) || 0,
+      quantite: Number(document.getElementById('fQuantite').value) || 0
+    };
+    if (!db) { toast('Stockage indisponible'); return; }
+    var p = state.editingId ? db.collection('produits').doc(state.editingId) : db.collection('produits').doc();
+    p.set(data).then(function () {
+      toast('Article enregistré');
+      closeProduitSheet();
+    }).catch(function () { toast('Erreur : article non enregistré'); });
+  });
+
+  document.getElementById('btnSupprimerProduit').addEventListener('click', function () {
+    if (!state.editingId || !db) return;
+    var idToDelete = state.editingId;
+    showConfirm('Supprimer définitivement cet article ?', function () {
+      db.collection('produits').doc(idToDelete).delete().then(function () {
+        toast('Article supprimé');
+        closeProduitSheet();
+      }).catch(function () { toast('Erreur lors de la suppression'); });
+    });
+  });
+
+  // ---------- VENTE ----------
+  function fillVenteSelect() {
+    var sel = document.getElementById('venteProduit');
+    var disponibles = state.produits.filter(function (p) { return (p.quantite || 0) > 0; });
+    if (disponibles.length === 0) {
+      sel.innerHTML = '<option value="">Aucun article disponible</option>';
+      document.getElementById('ventePrix').value = '';
+      updateVenteTotal();
+      return;
+    }
+    sel.innerHTML = disponibles.map(function (p) {
+      return '<option value="' + p.id + '">' + escapeHtml(p.nom) + (p.taille ? ' - ' + escapeHtml(p.taille) : '') + ' (' + p.quantite + ' en stock)</option>';
+    }).join('');
+    onVenteProduitChange();
+  }
+
+  function onVenteProduitChange() {
+    var sel = document.getElementById('venteProduit');
+    var p = state.produits.find(function (x) { return x.id === sel.value; });
+    document.getElementById('ventePrix').value = p ? p.prixVente : '';
+    var qteInput = document.getElementById('venteQte');
+    if (p) qteInput.max = p.quantite;
+    updateVenteTotal();
+  }
+
+  function updateVenteTotal() {
+    var qte = Number(document.getElementById('venteQte').value) || 0;
+    var prix = Number(document.getElementById('ventePrix').value) || 0;
+    document.getElementById('venteTotal').textContent = fmt(qte * prix);
+  }
+
+  document.getElementById('btnNouvelArticleDepuisVente').addEventListener('click', function () { openProduitSheet(null); });
+  document.getElementById('venteProduit').addEventListener('change', onVenteProduitChange);
+  document.getElementById('venteQte').addEventListener('input', updateVenteTotal);
+  document.getElementById('ventePrix').addEventListener('input', updateVenteTotal);
+
+  document.getElementById('btnEnregistrerVente').addEventListener('click', function () {
+    var sel = document.getElementById('venteProduit');
+    var p = state.produits.find(function (x) { return x.id === sel.value; });
+    if (!p) { toast('Choisissez un article'); return; }
+    var qte = Number(document.getElementById('venteQte').value) || 0;
+    var prix = Number(document.getElementById('ventePrix').value) || 0;
+    if (qte <= 0) { toast('Quantité invalide'); return; }
+    if (qte > (p.quantite || 0)) { toast('Stock insuffisant (' + p.quantite + ' restant)'); return; }
+    if (!db) { toast('Stockage indisponible'); return; }
+
+    var vente = {
+      produitId: p.id,
+      nom: p.nom,
+      categorie: p.categorie,
+      quantite: qte,
+      prixUnitaire: prix,
+      prixAchatUnitaire: p.prixAchat || 0,
+      total: qte * prix,
+      date: todayStr(),
+      timestamp: Date.now()
+    };
+
+    db.collection('ventes').add(vente).then(function () {
+      return db.collection('produits').doc(p.id).update({ quantite: (p.quantite || 0) - qte });
+    }).then(function () {
+      toast('Vente enregistrée');
+      document.getElementById('venteQte').value = 1;
+      fillVenteSelect();
+    }).catch(function () { toast('Erreur lors de la vente'); });
+  });
+
+  // ---------- DEPENSES ----------
+  document.getElementById('btnEnregistrerDepense').addEventListener('click', function () {
+    var libelle = document.getElementById('depLibelle').value.trim();
+    var montant = Number(document.getElementById('depMontant').value) || 0;
+    var categorie = document.getElementById('depCategorie').value;
+    if (!libelle) { toast('Donnez un libellé à la dépense'); return; }
+    if (montant <= 0) { toast('Montant invalide'); return; }
+    if (!db) { toast('Stockage indisponible'); return; }
+
+    db.collection('depenses').add({
+      libelle: libelle,
+      categorie: categorie,
+      montant: montant,
+      date: todayStr(),
+      timestamp: Date.now()
+    }).then(function () {
+      toast('Dépense enregistrée');
+      document.getElementById('depLibelle').value = '';
+      document.getElementById('depMontant').value = '';
+    }).catch(function () { toast('Erreur lors de l\'enregistrement'); });
+  });
+
+  function renderDepenses() {
+    var list = document.getElementById('depensesList');
+    var items = state.depenses.slice().sort(function (a, b) { return (b.timestamp || 0) - (a.timestamp || 0); });
+    if (items.length === 0) {
+      list.innerHTML = '<div class="empty">Aucune dépense enregistrée pour le moment.</div>';
+      return;
+    }
+    list.innerHTML = '<div class="mini-list">' + items.map(function (d) {
+      var dateLabel = new Date(d.date + 'T00:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
+      return '<div class="mini-row" data-id="' + d.id + '"><div class="who"><span>' + escapeHtml(d.libelle) + '</span><span>' + escapeHtml(d.categorie) + ' · ' + dateLabel + '</span></div><div class="amt">' + fmt(d.montant) + '</div></div>';
+    }).join('') + '</div>';
+
+    list.querySelectorAll('.mini-row').forEach(function (row) {
+      row.addEventListener('click', function () {
+        if (!db) return;
+        var idToDelete = row.getAttribute('data-id');
+        showConfirm('Supprimer cette dépense ?', function () {
+          db.collection('depenses').doc(idToDelete).delete().then(function () {
+            toast('Dépense supprimée');
+          }).catch(function () { toast('Erreur lors de la suppression'); });
+        });
+      });
+    });
+  }
+
+  // ---------- HISTORIQUE ----------
+  function renderHistorique() {
+    var list = document.getElementById('historiqueList');
+    if (state.ventes.length === 0 && state.depenses.length === 0) {
+      list.innerHTML = '<div class="empty">Aucun mouvement enregistré pour le moment.</div>';
+      return;
+    }
+    var groupedVentes = {};
+    state.ventes.forEach(function (v) {
+      groupedVentes[v.date] = groupedVentes[v.date] || [];
+      groupedVentes[v.date].push(v);
+    });
+    var groupedDepenses = {};
+    state.depenses.forEach(function (d) {
+      groupedDepenses[d.date] = groupedDepenses[d.date] || [];
+      groupedDepenses[d.date].push(d);
+    });
+    var dates = Array.from(new Set(Object.keys(groupedVentes).concat(Object.keys(groupedDepenses)))).sort().reverse();
+
+    list.innerHTML = dates.map(function (date) {
+      var jourVentes = (groupedVentes[date] || []).slice().sort(function (a, b) { return (b.timestamp || 0) - (a.timestamp || 0); });
+      var jourDepenses = (groupedDepenses[date] || []).slice().sort(function (a, b) { return (b.timestamp || 0) - (a.timestamp || 0); });
+      var totalVentes = jourVentes.reduce(function (s, v) { return s + (v.total || 0); }, 0);
+      var totalDepenses = jourDepenses.reduce(function (s, d) { return s + (d.montant || 0); }, 0);
+      var net = totalVentes - totalDepenses;
+
+      var rowsVentes = jourVentes.map(function (v) {
+        return '<div class="mini-row"><div class="who"><span>' + escapeHtml(v.nom) + '</span><span>' + v.quantite + ' × ' + fmt(v.prixUnitaire) + '</span></div><div class="amt">' + fmt(v.total) + '</div></div>';
+      }).join('');
+      var rowsDepenses = jourDepenses.map(function (d) {
+        return '<div class="mini-row"><div class="who"><span>' + escapeHtml(d.libelle) + '</span><span>' + escapeHtml(d.categorie) + '</span></div><div class="amt">− ' + fmt(d.montant) + '</div></div>';
+      }).join('');
+
+      var dateLabel = new Date(date + 'T00:00:00').toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
+      var html = '<section class="block"><h2>' + dateLabel + ' · net ' + fmt(net) + '</h2>';
+      if (rowsVentes) html += '<div class="mini-list">' + rowsVentes + '</div>';
+      if (rowsDepenses) html += '<div class="mini-list" style="margin-top:8px;">' + rowsDepenses + '</div>';
+      html += '</section>';
+      return html;
+    }).join('');
+  }
+
+  // ---------- DASHBOARD ----------
+  document.getElementById('periodeRow').querySelectorAll('.filter-btn').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      state.periode = btn.getAttribute('data-periode');
+      document.getElementById('periodeRow').querySelectorAll('.filter-btn').forEach(function (b) { b.classList.toggle('active', b === btn); });
+      renderDashboard();
+    });
+  });
+
+  function dansPeriode(dateStr) {
+    if (!dateStr) return false;
+    if (state.periode === 'tout') return true;
+    var d = new Date(dateStr + 'T00:00:00');
+    var now = new Date();
+    if (state.periode === 'jour') return dateStr === todayStr();
+    if (state.periode === 'semaine') {
+      var diffJours = Math.floor((new Date(todayStr() + 'T00:00:00') - d) / 86400000);
+      return diffJours >= 0 && diffJours < 7;
+    }
+    if (state.periode === 'mois') return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
+    return true;
+  }
+
+  function renderDashboard() {
+    var ventesP = state.ventes.filter(function (v) { return dansPeriode(v.date); });
+    var depensesP = state.depenses.filter(function (d) { return dansPeriode(d.date); });
+    var totalVentesP = ventesP.reduce(function (s, v) { return s + (v.total || 0); }, 0);
+    var totalDepensesP = depensesP.reduce(function (s, d) { return s + (d.montant || 0); }, 0);
+    var beneficeBrutP = ventesP.reduce(function (s, v) { return s + ((v.prixUnitaire - (v.prixAchatUnitaire || 0)) * v.quantite); }, 0);
+    var beneficeNetP = beneficeBrutP - totalDepensesP;
+    var totalArticles = state.produits.reduce(function (s, p) { return s + (p.quantite || 0); }, 0);
+    var valeurStock = state.produits.reduce(function (s, p) { return s + (p.quantite || 0) * (p.prixVente || 0); }, 0);
+
+    setStatAnimated('statVentesJour', totalVentesP);
+    setStatAnimated('statDepensesJour', totalDepensesP);
+    setStatAnimated('statBeneficeNetJour', beneficeNetP);
+    document.getElementById('statArticles').textContent = totalArticles;
+    setStatAnimated('statValeurStock', valeurStock);
+
+    var lowStock = state.produits.filter(function (p) { return (p.quantite || 0) <= 2; }).slice(0, 6);
+    var lowList = document.getElementById('lowStockList');
+    lowList.innerHTML = lowStock.length ? lowStock.map(function (p) {
+      var catTagClass = p.categorie === 'Femme' ? 'femme' : 'homme';
+      return '<div class="mini-row"><div class="who"><span>' + escapeHtml(p.nom) + '</span><span><span class="cat-tag ' + catTagClass + '">' + escapeHtml(p.categorie) + '</span></span></div><div class="amt">' + (p.quantite || 0) + ' restant</div></div>';
+    }).join('') : '<div class="empty">Tout est bien approvisionné.</div>';
+
+    var recent = state.ventes.slice().sort(function (a, b) { return (b.timestamp || 0) - (a.timestamp || 0); }).slice(0, 5);
+    var recentList = document.getElementById('recentSalesList');
+    recentList.innerHTML = recent.length ? recent.map(function (v) {
+      return '<div class="mini-row"><div class="who"><span>' + escapeHtml(v.nom) + '</span><span>' + v.quantite + ' article(s)</span></div><div class="amt">' + fmt(v.total) + '</div></div>';
+    }).join('') : '<div class="empty">Aucune vente pour l\'instant.</div>';
+  }
+
+  function renderAll() {
+    renderDashboard();
+    renderStock();
+    renderDepenses();
+    renderHistorique();
+    if (document.getElementById('view-vente').classList.contains('active')) fillVenteSelect();
+  }
+
+  // ---------- FIRESTORE SCOPÉ À L'UTILISATEUR CONNECTÉ ----------
+  function createUserStore(uid) {
+    function collection(name) {
+      return firestore.collection('users/' + uid + '/' + name);
+    }
+    function doc(path) {
+      return firestore.doc('users/' + uid + '/' + path);
+    }
+    return { collection: collection, doc: doc };
+  }
+
+  // ---------- SAUVEGARDE / RESTAURATION ----------
+  function exporterDonnees() {
+    var payload = {
+      produits: {}, ventes: {}, depenses: {}, reglages: {},
+      exporteLe: new Date().toISOString()
+    };
+    state.produits.forEach(function (p) { payload.produits[p.id] = p; });
+    state.ventes.forEach(function (v) { payload.ventes[v.id] = v; });
+    state.depenses.forEach(function (d) { payload.depenses[d.id] = d; });
+    payload.reglages.boutique = { nom: shopNameEl.textContent.trim() };
+
+    var blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = 'mdd-store-sauvegarde-' + todayStr() + '.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(url); }, 2000);
+    toast('Sauvegarde téléchargée');
+  }
+
+  function importerDonnees(file) {
+    var reader = new FileReader();
+    reader.onload = function () {
+      if (!db) return;
+      try {
+        var payload = JSON.parse(reader.result);
+        var promises = [];
+        ['produits', 'ventes', 'depenses'].forEach(function (colName) {
+          if (payload[colName]) {
+            Object.keys(payload[colName]).forEach(function (id) {
+              var data = Object.assign({}, payload[colName][id]);
+              delete data.id;
+              promises.push(db.collection(colName).doc(id).set(data));
+            });
+          }
+        });
+        if (payload.reglages && payload.reglages.boutique) {
+          promises.push(db.doc('reglages/boutique').set(payload.reglages.boutique));
+        }
+        Promise.all(promises).then(function () {
+          toast('Sauvegarde restaurée');
+        }).catch(function () { toast('Erreur pendant la restauration'); });
+      } catch (e) {
+        toast('Fichier de sauvegarde invalide');
+      }
+    };
+    reader.readAsText(file);
+  }
+
+  document.getElementById('btnExporter').addEventListener('click', exporterDonnees);
+  document.getElementById('btnImporter').addEventListener('click', function () {
+    document.getElementById('inputImporter').click();
+  });
+  document.getElementById('inputImporter').addEventListener('change', function (e) {
+    if (e.target.files && e.target.files[0]) {
+      var file = e.target.files[0];
+      showConfirm('Restaurer cette sauvegarde va ajouter ou remplacer les données correspondantes. Continuer ?', function () {
+        importerDonnees(file);
+      });
+      e.target.value = '';
+    }
+  });
+
+  // ---------- AUTHENTIFICATION ----------
+  function showAuthError(message) {
+    var el = document.getElementById('authError');
+    el.textContent = message;
+    el.style.display = 'block';
+  }
+  function clearAuthError() {
+    document.getElementById('authError').style.display = 'none';
+  }
+  function traduireErreurAuth(code) {
+    var messages = {
+      'auth/invalid-email': "Adresse e-mail invalide.",
+      'auth/missing-password': "Merci d'indiquer un mot de passe.",
+      'auth/weak-password': "Le mot de passe doit faire au moins 6 caractères.",
+      'auth/email-already-in-use': "Un compte existe déjà avec cet e-mail.",
+      'auth/invalid-credential': "E-mail ou mot de passe incorrect.",
+      'auth/wrong-password': "E-mail ou mot de passe incorrect.",
+      'auth/user-not-found': "Aucun compte avec cet e-mail. Crée un compte d'abord.",
+      'auth/too-many-requests': "Trop de tentatives, réessaie dans un instant.",
+      'auth/network-request-failed': "Pas de connexion internet.",
+      'auth/operation-not-allowed': "La connexion par e-mail n'est pas activée.",
+      'auth/unauthorized-domain': "Ce site n'est pas encore autorisé dans Firebase."
+    };
+    return messages[code] || "Une erreur est survenue. Réessaie.";
+  }
+
+  document.getElementById('btnSeConnecter').addEventListener('click', function () {
+    clearAuthError();
+    var email = document.getElementById('authEmail').value.trim();
+    var password = document.getElementById('authPassword').value;
+    if (!email || !password) { showAuthError("Remplis l'e-mail et le mot de passe."); return; }
+    auth.signInWithEmailAndPassword(email, password).catch(function (err) {
+      showAuthError(traduireErreurAuth(err.code));
+    });
+  });
+
+  document.getElementById('btnCreerCompte').addEventListener('click', function () {
+    clearAuthError();
+    var email = document.getElementById('authEmail').value.trim();
+    var password = document.getElementById('authPassword').value;
+    if (!email || !password) { showAuthError("Remplis l'e-mail et le mot de passe."); return; }
+    auth.createUserWithEmailAndPassword(email, password).catch(function (err) {
+      showAuthError(traduireErreurAuth(err.code));
+    });
+  });
+
+  document.getElementById('btnDeconnexion').addEventListener('click', function () {
+    showConfirm('Se déconnecter de ton compte ?', function () {
+      auth.signOut();
+    });
+  });
+
+  // ---------- INIT (après connexion) ----------
+  function init(uid) {
+    db = createUserStore(uid);
+
+    unsubscribers.push(db.doc('reglages/boutique').onSnapshot(function (snap) {
+      var data = snap.data();
+      shopNameEl.textContent = (data && data.nom) ? data.nom : 'MDD Store';
+    }, function () {}));
+
+    unsubscribers.push(db.collection('produits').onSnapshot(function (snap) {
+      state.produits = snap.docs.map(function (d) { return Object.assign({ id: d.id }, d.data()); });
+      renderAll();
+    }, function () { toast('Erreur de synchronisation du stock'); }));
+
+    unsubscribers.push(db.collection('ventes').onSnapshot(function (snap) {
+      state.ventes = snap.docs.map(function (d) { return Object.assign({ id: d.id }, d.data()); });
+      renderAll();
+    }, function () { toast('Erreur de synchronisation des ventes'); }));
+
+    unsubscribers.push(db.collection('depenses').onSnapshot(function (snap) {
+      state.depenses = snap.docs.map(function (d) { return Object.assign({ id: d.id }, d.data()); });
+      renderAll();
+    }, function () { toast('Erreur de synchronisation des dépenses'); }));
+  }
+
+  auth.onAuthStateChanged(function (user) {
+    unsubscribers.forEach(function (unsub) { unsub(); });
+    unsubscribers = [];
+    db = null;
+    if (user) {
+      document.getElementById('authScreen').style.display = 'none';
+      document.getElementById('app').style.display = 'flex';
+      document.getElementById('authEmail').value = '';
+      document.getElementById('authPassword').value = '';
+      state.produits = []; state.ventes = []; state.depenses = [];
+      init(user.uid);
+    } else {
+      document.getElementById('app').style.display = 'none';
+      document.getElementById('authScreen').style.display = 'flex';
+    }
+  });
+})();
+</script>
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function () { navigator.serviceWorker.register('sw.js').catch(function () {}); });
+}
+</script>
+</body>
+</html>
