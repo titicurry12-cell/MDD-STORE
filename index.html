@@ -227,6 +227,15 @@
     white-space: nowrap;
   }
   .produit-card .qty.low { color: var(--danger); }
+  .produit-card .qty.epuise { color: var(--danger); font-size: 0.78rem; font-weight: 700; font-family: 'Work Sans', sans-serif; background: var(--danger-bg); padding: 3px 8px; border-radius: 999px; }
+  .produit-thumb {
+    width: 48px; height: 48px; border-radius: 10px; object-fit: cover;
+    flex-shrink: 0; background: var(--bg); border: 1px solid var(--line);
+  }
+  .produit-thumb-empty {
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Newsreader', serif; font-size: 1.3rem; color: var(--ink-soft);
+  }
   .produit-card .prices { display: flex; gap: 14px; margin-top: 8px; font-size: 0.78rem; color: var(--ink-soft); }
 
   .cat-tag {
@@ -275,9 +284,9 @@
     flex: 1;
     background: none;
     border: none;
-    padding: 12px 4px 10px;
+    padding: 12px 2px 10px;
     font-family: 'Work Sans', sans-serif;
-    font-size: 0.72rem;
+    font-size: 0.64rem;
     color: var(--ink-soft);
     cursor: pointer;
     display: flex; flex-direction: column; align-items: center; gap: 4px;
@@ -432,10 +441,20 @@
           <div class="label">Valeur du stock</div>
           <div class="value" id="statValeurStock">0 GNF</div>
         </div>
+        <div class="stat-card wide" id="statCreancesCard" style="display:none;">
+          <div class="label">Créances en cours (à recevoir)</div>
+          <div class="value" id="statCreances" style="color:var(--danger);">0 GNF</div>
+        </div>
       </div>
 
       <section class="block">
-        <h2>Stock bas</h2>
+        <h2>Ventes des 7 derniers jours</h2>
+        <canvas id="chartVentes7j" height="140" style="width:100%; display:block;"></canvas>
+      </section>
+
+      <section class="block">
+        <h2>Alertes stock</h2>
+        <div id="outOfStockWrap" style="margin-bottom:10px;"></div>
         <div class="mini-list" id="lowStockList"></div>
       </section>
 
@@ -454,6 +473,9 @@
 
     <!-- STOCK -->
     <section class="view" id="view-stock">
+      <div class="field" style="margin-top:12px;">
+        <input type="text" id="stockSearch" placeholder="Rechercher un article (nom, couleur, taille...)">
+      </div>
       <div class="filter-row">
         <button class="filter-btn active" data-filter="Tout">Tout</button>
         <button class="filter-btn" data-filter="Femme">Femme</button>
@@ -485,7 +507,42 @@
           <span>Total</span>
           <span class="num" id="venteTotal">0 GNF</span>
         </div>
+
+        <div class="field" style="margin-top:14px;">
+          <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+            <input type="checkbox" id="venteACredit" style="width:auto; accent-color:var(--accent);">
+            <span>Vente à crédit (paiement partiel ou différé)</span>
+          </label>
+        </div>
+        <div id="creditFields" style="display:none;">
+          <div class="field">
+            <label for="creditClientNom">Nom de la cliente / du client</label>
+            <input type="text" id="creditClientNom" placeholder="Ex : Mariama Diallo">
+          </div>
+          <div class="field">
+            <label for="creditMontantPaye">Montant payé aujourd'hui (GNF)</label>
+            <input type="number" id="creditMontantPaye" min="0" value="0">
+          </div>
+          <div class="total-line">
+            <span>Reste à payer</span>
+            <span class="num" id="creditReste" style="color:var(--danger);">0 GNF</span>
+          </div>
+        </div>
+
         <button class="btn primary" id="btnEnregistrerVente">Enregistrer la vente</button>
+
+        <div id="recuApresVente" style="display:none; margin-top:14px; padding:14px; border-radius:12px; background:var(--bg-raised); border:1px solid var(--line); box-shadow:0 1px 3px var(--shadow);">
+          <div style="font-weight:600; margin-bottom:8px;">✓ Vente enregistrée</div>
+          <button type="button" class="btn ghost" id="btnPartagerRecu" style="border:1px solid var(--line); text-align:center;">Partager le reçu (WhatsApp)</button>
+        </div>
+      </section>
+    </section>
+
+    <!-- DETTES -->
+    <section class="view" id="view-dettes">
+      <section class="block">
+        <h2>Créances en cours</h2>
+        <div id="dettesList"></div>
       </section>
     </section>
 
@@ -532,9 +589,10 @@
   <button class="fab" id="fabAjouter" title="Ajouter un article">+</button>
 
   <nav class="tabs">
-    <button class="active" data-view="dashboard"><span class="dot"></span>Tableau de bord</button>
+    <button class="active" data-view="dashboard"><span class="dot"></span>Accueil</button>
     <button data-view="stock"><span class="dot"></span>Stock</button>
     <button data-view="vente"><span class="dot"></span>Vente</button>
+    <button data-view="dettes"><span class="dot"></span>Dettes</button>
     <button data-view="depenses"><span class="dot"></span>Dépenses</button>
     <button data-view="historique"><span class="dot"></span>Historique</button>
   </nav>
@@ -566,6 +624,20 @@
 <div class="sheet-overlay" id="sheetProduit">
   <div class="sheet">
     <h3 id="sheetProduitTitle">Nouvel article</h3>
+    <div class="field">
+      <label>Photo</label>
+      <div id="photoPreviewWrap" style="display:flex; align-items:center; gap:12px;">
+        <div id="photoPreviewBox" style="width:64px; height:64px; border-radius:12px; background:var(--bg); border:1px solid var(--line); overflow:hidden; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+          <img id="photoPreviewImg" style="display:none; width:100%; height:100%; object-fit:cover;">
+          <span id="photoPreviewPlaceholder" style="color:var(--ink-soft); font-size:0.68rem; text-align:center;">Aucune</span>
+        </div>
+        <div style="flex:1; display:flex; flex-direction:column; gap:6px;">
+          <button type="button" class="btn ghost" id="btnPrendrePhoto" style="margin-top:0; border:1px solid var(--line); text-align:center;">Prendre une photo</button>
+          <button type="button" class="btn ghost" id="btnSupprimerPhoto" style="margin-top:0; text-align:center; display:none; color:var(--danger);">Retirer la photo</button>
+        </div>
+        <input type="file" id="fPhoto" accept="image/*" capture="environment" style="display:none;">
+      </div>
+    </div>
     <div class="field">
       <label>Catégorie</label>
       <div class="seg" id="segCategorie">
@@ -601,12 +673,29 @@
       <label for="fQuantite">Quantité en stock</label>
       <input type="number" id="fQuantite" min="0" value="1">
     </div>
+    <div class="field">
+      <label for="fSeuil">Alerte stock bas à partir de</label>
+      <input type="number" id="fSeuil" min="0" value="2">
+    </div>
     <button class="btn primary" id="btnSauverProduit">Enregistrer</button>
     <button class="btn danger" id="btnSupprimerProduit" style="display:none;">Supprimer l'article</button>
     <button class="btn ghost" id="btnFermerSheet">Annuler</button>
   </div>
 </div>
 
+
+<div class="sheet-overlay" id="sheetPaiement">
+  <div class="sheet">
+    <h3>Enregistrer un paiement</h3>
+    <div id="paiementInfo" style="color:var(--ink-soft); font-size:0.85rem; margin-bottom:10px;"></div>
+    <div class="field">
+      <label for="paiementMontant">Montant reçu (GNF)</label>
+      <input type="number" id="paiementMontant" min="0">
+    </div>
+    <button class="btn primary" id="btnEncaisser">Enregistrer le paiement</button>
+    <button class="btn ghost" id="btnFermerPaiement">Annuler</button>
+  </div>
+</div>
 
 <div class="sheet-overlay" id="confirmOverlay">
   <div class="sheet">
@@ -702,7 +791,7 @@
   document.getElementById('dateToday').textContent = new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
 
   // ---------- NAV ----------
-  var views = ['dashboard', 'stock', 'vente', 'depenses', 'historique'];
+  var views = ['dashboard', 'stock', 'vente', 'dettes', 'depenses', 'historique'];
   var fabBtn = document.getElementById('fabAjouter');
   document.querySelectorAll('nav.tabs button').forEach(function (btn) {
     btn.addEventListener('click', function () {
@@ -727,23 +816,36 @@
   // ---------- RENDER: STOCK ----------
   function renderStock() {
     var list = document.getElementById('stockList');
+    var recherche = (document.getElementById('stockSearch').value || '').trim().toLowerCase();
     var items = state.produits.filter(function (p) {
-      return state.stockFilter === 'Tout' || p.categorie === state.stockFilter;
+      var matchCat = state.stockFilter === 'Tout' || p.categorie === state.stockFilter;
+      if (!matchCat) return false;
+      if (!recherche) return true;
+      var champs = [p.nom, p.couleur, p.taille, p.categorie].join(' ').toLowerCase();
+      return champs.indexOf(recherche) !== -1;
     }).sort(function (a, b) { return (a.nom || '').localeCompare(b.nom || ''); });
 
     if (items.length === 0) {
-      list.innerHTML = '<div class="empty">Aucun article ici pour l\'instant. Touchez le bouton + pour en ajouter un.</div>';
+      list.innerHTML = recherche
+        ? '<div class="empty">Aucun article ne correspond à "' + escapeHtml(recherche) + '".</div>'
+        : '<div class="empty">Aucun article ici pour l\'instant. Touchez le bouton + pour en ajouter un.</div>';
       return;
     }
     list.innerHTML = items.map(function (p) {
-      var low = (p.quantite || 0) <= 2;
+      var seuil = p.seuilAlerte != null ? p.seuilAlerte : 2;
+      var epuise = (p.quantite || 0) === 0;
+      var low = !epuise && (p.quantite || 0) <= seuil;
       var catClass = p.categorie === 'Femme' ? 'cat-femme' : 'cat-homme';
       var catTagClass = p.categorie === 'Femme' ? 'femme' : 'homme';
+      var photoHtml = p.photo
+        ? '<img src="' + p.photo + '" class="produit-thumb">'
+        : '<div class="produit-thumb produit-thumb-empty">' + escapeHtml((p.nom || '?').charAt(0).toUpperCase()) + '</div>';
       return '<div class="produit-card ' + catClass + '" data-id="' + p.id + '">' +
         '<div class="row1">' +
-          '<div><div class="nom">' + escapeHtml(p.nom) + '</div>' +
+          photoHtml +
+          '<div style="flex:1; min-width:0;"><div class="nom">' + escapeHtml(p.nom) + '</div>' +
           '<div class="meta"><span class="cat-tag ' + catTagClass + '">' + escapeHtml(p.categorie) + '</span>' + (p.taille ? 'Taille ' + escapeHtml(p.taille) : '') + (p.couleur ? ' · ' + escapeHtml(p.couleur) : '') + '</div></div>' +
-          '<div class="qty' + (low ? ' low' : '') + '">' + (p.quantite || 0) + '</div>' +
+          '<div class="qty' + (low ? ' low' : '') + (epuise ? ' epuise' : '') + '">' + (epuise ? 'Épuisé' : (p.quantite || 0)) + '</div>' +
         '</div>' +
         '<div class="prices"><span>Achat ' + fmt(p.prixAchat) + '</span><span>Vente ' + fmt(p.prixVente) + '</span></div>' +
       '</div>';
@@ -764,6 +866,8 @@
     });
   });
 
+  document.getElementById('stockSearch').addEventListener('input', renderStock);
+
   function escapeHtml(s) {
     return (s || '').toString().replace(/[&<>"']/g, function (c) {
       return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
@@ -774,12 +878,67 @@
   var sheetProduit = document.getElementById('sheetProduit');
   var segCat = document.getElementById('segCategorie');
   var currentCat = 'Femme';
+  var photoDataUrl = null;
 
   segCat.querySelectorAll('button').forEach(function (b) {
     b.addEventListener('click', function () {
       currentCat = b.getAttribute('data-cat');
       segCat.querySelectorAll('button').forEach(function (x) { x.classList.toggle('active', x === b); });
     });
+  });
+
+  function afficherPhotoPreview(url) {
+    var img = document.getElementById('photoPreviewImg');
+    var placeholder = document.getElementById('photoPreviewPlaceholder');
+    var btnRetirer = document.getElementById('btnSupprimerPhoto');
+    if (url) {
+      img.src = url;
+      img.style.display = 'block';
+      placeholder.style.display = 'none';
+      btnRetirer.style.display = 'block';
+    } else {
+      img.src = '';
+      img.style.display = 'none';
+      placeholder.style.display = 'block';
+      btnRetirer.style.display = 'none';
+    }
+  }
+
+  function compresserImage(file, callback) {
+    var reader = new FileReader();
+    reader.onload = function (e) {
+      var img = new Image();
+      img.onload = function () {
+        var maxSize = 480;
+        var w = img.width, h = img.height;
+        if (w > h && w > maxSize) { h = Math.round(h * maxSize / w); w = maxSize; }
+        else if (h > maxSize) { w = Math.round(w * maxSize / h); h = maxSize; }
+        var canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        callback(canvas.toDataURL('image/jpeg', 0.6));
+      };
+      img.onerror = function () { toast('Image invalide'); };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  document.getElementById('btnPrendrePhoto').addEventListener('click', function () {
+    document.getElementById('fPhoto').click();
+  });
+  document.getElementById('fPhoto').addEventListener('change', function (e) {
+    var file = e.target.files && e.target.files[0];
+    if (!file) return;
+    compresserImage(file, function (dataUrl) {
+      photoDataUrl = dataUrl;
+      afficherPhotoPreview(photoDataUrl);
+    });
+    e.target.value = '';
+  });
+  document.getElementById('btnSupprimerPhoto').addEventListener('click', function () {
+    photoDataUrl = null;
+    afficherPhotoPreview(null);
   });
 
   function openProduitSheet(id) {
@@ -792,7 +951,10 @@
     document.getElementById('fPrixAchat').value = p ? p.prixAchat : '';
     document.getElementById('fPrixVente').value = p ? p.prixVente : '';
     document.getElementById('fQuantite').value = p ? p.quantite : 1;
+    document.getElementById('fSeuil').value = p && p.seuilAlerte != null ? p.seuilAlerte : 2;
     currentCat = p ? p.categorie : 'Femme';
+    photoDataUrl = p && p.photo ? p.photo : null;
+    afficherPhotoPreview(photoDataUrl);
     segCat.querySelectorAll('button').forEach(function (x) {
       x.classList.toggle('active', x.getAttribute('data-cat') === currentCat);
     });
@@ -815,7 +977,9 @@
       couleur: document.getElementById('fCouleur').value.trim(),
       prixAchat: Number(document.getElementById('fPrixAchat').value) || 0,
       prixVente: Number(document.getElementById('fPrixVente').value) || 0,
-      quantite: Number(document.getElementById('fQuantite').value) || 0
+      quantite: Number(document.getElementById('fQuantite').value) || 0,
+      seuilAlerte: Number(document.getElementById('fSeuil').value) || 0,
+      photo: photoDataUrl || null
     };
     if (!db) { toast('Stockage indisponible'); return; }
     var p = state.editingId ? db.collection('produits').doc(state.editingId) : db.collection('produits').doc();
@@ -864,13 +1028,32 @@
   function updateVenteTotal() {
     var qte = Number(document.getElementById('venteQte').value) || 0;
     var prix = Number(document.getElementById('ventePrix').value) || 0;
-    document.getElementById('venteTotal').textContent = fmt(qte * prix);
+    var total = qte * prix;
+    document.getElementById('venteTotal').textContent = fmt(total);
+    updateCreditReste();
   }
+
+  function updateCreditReste() {
+    var qte = Number(document.getElementById('venteQte').value) || 0;
+    var prix = Number(document.getElementById('ventePrix').value) || 0;
+    var total = qte * prix;
+    var paye = Number(document.getElementById('creditMontantPaye').value) || 0;
+    var reste = Math.max(0, total - paye);
+    document.getElementById('creditReste').textContent = fmt(reste);
+  }
+
+  document.getElementById('venteACredit').addEventListener('change', function (e) {
+    document.getElementById('creditFields').style.display = e.target.checked ? 'block' : 'none';
+    if (e.target.checked) updateCreditReste();
+  });
+  document.getElementById('creditMontantPaye').addEventListener('input', updateCreditReste);
 
   document.getElementById('btnNouvelArticleDepuisVente').addEventListener('click', function () { openProduitSheet(null); });
   document.getElementById('venteProduit').addEventListener('change', onVenteProduitChange);
   document.getElementById('venteQte').addEventListener('input', updateVenteTotal);
   document.getElementById('ventePrix').addEventListener('input', updateVenteTotal);
+
+  var derniereVente = null;
 
   document.getElementById('btnEnregistrerVente').addEventListener('click', function () {
     var sel = document.getElementById('venteProduit');
@@ -882,6 +1065,17 @@
     if (qte > (p.quantite || 0)) { toast('Stock insuffisant (' + p.quantite + ' restant)'); return; }
     if (!db) { toast('Stockage indisponible'); return; }
 
+    var total = qte * prix;
+    var aCredit = document.getElementById('venteACredit').checked;
+    var clientNom = document.getElementById('creditClientNom').value.trim();
+    var montantPaye = total;
+    if (aCredit) {
+      if (!clientNom) { toast('Indique le nom du client pour une vente à crédit'); return; }
+      montantPaye = Number(document.getElementById('creditMontantPaye').value) || 0;
+      if (montantPaye > total) { toast('Le montant payé dépasse le total'); return; }
+    }
+    var resteAPayer = Math.max(0, total - montantPaye);
+
     var vente = {
       produitId: p.id,
       nom: p.nom,
@@ -889,7 +1083,11 @@
       quantite: qte,
       prixUnitaire: prix,
       prixAchatUnitaire: p.prixAchat || 0,
-      total: qte * prix,
+      total: total,
+      modePaiement: aCredit ? 'credit' : 'complet',
+      clientNom: aCredit ? clientNom : '',
+      montantPaye: montantPaye,
+      resteAPayer: resteAPayer,
       date: todayStr(),
       timestamp: Date.now()
     };
@@ -898,9 +1096,94 @@
       return db.collection('produits').doc(p.id).update({ quantite: (p.quantite || 0) - qte });
     }).then(function () {
       toast('Vente enregistrée');
+      derniereVente = Object.assign({}, vente);
+      document.getElementById('recuApresVente').style.display = 'block';
       document.getElementById('venteQte').value = 1;
+      document.getElementById('venteACredit').checked = false;
+      document.getElementById('creditFields').style.display = 'none';
+      document.getElementById('creditClientNom').value = '';
+      document.getElementById('creditMontantPaye').value = 0;
       fillVenteSelect();
     }).catch(function () { toast('Erreur lors de la vente'); });
+  });
+
+  document.getElementById('btnPartagerRecu').addEventListener('click', function () {
+    if (!derniereVente) return;
+    var nomBoutique = shopNameEl.textContent.trim() || 'MDD Store';
+    var lignes = [
+      nomBoutique,
+      '',
+      derniereVente.nom + ' × ' + derniereVente.quantite,
+      'Prix unitaire : ' + fmt(derniereVente.prixUnitaire),
+      'Total : ' + fmt(derniereVente.total)
+    ];
+    if (derniereVente.modePaiement === 'credit') {
+      lignes.push('Payé : ' + fmt(derniereVente.montantPaye));
+      lignes.push('Reste à payer : ' + fmt(derniereVente.resteAPayer));
+    }
+    lignes.push('Date : ' + new Date(derniereVente.date + 'T00:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }));
+    var texte = lignes.join('\n');
+    var url = 'https://wa.me/?text=' + encodeURIComponent(texte);
+    window.open(url, '_blank');
+  });
+
+  // ---------- DETTES ----------
+  var paiementVenteId = null;
+  function renderDettes() {
+    var list = document.getElementById('dettesList');
+    var dettes = state.ventes.filter(function (v) { return (v.resteAPayer || 0) > 0; })
+      .sort(function (a, b) { return (b.timestamp || 0) - (a.timestamp || 0); });
+
+    var totalDettes = dettes.reduce(function (s, v) { return s + (v.resteAPayer || 0); }, 0);
+
+    if (dettes.length === 0) {
+      list.innerHTML = '<div class="empty">Aucune créance en cours. Tout est payé !</div>';
+      return;
+    }
+    var entete = '<div class="mini-row" style="margin-bottom:10px; background:var(--danger-bg);"><div class="who"><span>Total à recevoir</span></div><div class="amt" style="color:var(--danger);">' + fmt(totalDettes) + '</div></div>';
+    list.innerHTML = entete + dettes.map(function (v) {
+      var dateLabel = new Date(v.date + 'T00:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
+      return '<div class="produit-card" data-id="' + v.id + '" style="cursor:pointer;">' +
+        '<div class="row1">' +
+          '<div style="flex:1; min-width:0;"><div class="nom">' + escapeHtml(v.clientNom || 'Client') + '</div>' +
+          '<div class="meta">' + escapeHtml(v.nom) + ' · ' + dateLabel + '</div></div>' +
+          '<div class="qty epuise">' + fmt(v.resteAPayer) + '</div>' +
+        '</div>' +
+      '</div>';
+    }).join('');
+
+    list.querySelectorAll('.produit-card').forEach(function (card) {
+      card.addEventListener('click', function () {
+        ouvrirPaiement(card.getAttribute('data-id'));
+      });
+    });
+  }
+
+  function ouvrirPaiement(venteId) {
+    var v = state.ventes.find(function (x) { return x.id === venteId; });
+    if (!v) return;
+    paiementVenteId = venteId;
+    document.getElementById('paiementInfo').textContent = (v.clientNom || 'Client') + ' · ' + v.nom + ' · reste ' + fmt(v.resteAPayer);
+    document.getElementById('paiementMontant').value = v.resteAPayer;
+    document.getElementById('sheetPaiement').classList.add('open');
+  }
+  document.getElementById('btnFermerPaiement').addEventListener('click', function () {
+    document.getElementById('sheetPaiement').classList.remove('open');
+    paiementVenteId = null;
+  });
+  document.getElementById('btnEncaisser').addEventListener('click', function () {
+    if (!paiementVenteId || !db) return;
+    var v = state.ventes.find(function (x) { return x.id === paiementVenteId; });
+    if (!v) return;
+    var montant = Number(document.getElementById('paiementMontant').value) || 0;
+    if (montant <= 0) { toast('Montant invalide'); return; }
+    var nouveauPaye = (v.montantPaye || 0) + montant;
+    var nouveauReste = Math.max(0, v.total - nouveauPaye);
+    db.collection('ventes').doc(v.id).update({ montantPaye: nouveauPaye, resteAPayer: nouveauReste }).then(function () {
+      toast(nouveauReste === 0 ? 'Dette soldée' : 'Paiement enregistré');
+      document.getElementById('sheetPaiement').classList.remove('open');
+      paiementVenteId = null;
+    }).catch(function () { toast('Erreur lors de l\'encaissement'); });
   });
 
   // ---------- DEPENSES ----------
@@ -1015,6 +1298,66 @@
     return true;
   }
 
+  function dessinerGraphiqueVentes() {
+    var canvas = document.getElementById('chartVentes7j');
+    if (!canvas) return;
+    var dpr = window.devicePixelRatio || 1;
+    var cssWidth = canvas.clientWidth || canvas.parentElement.clientWidth || 300;
+    var cssHeight = 140;
+    canvas.width = cssWidth * dpr;
+    canvas.height = cssHeight * dpr;
+    var ctx = canvas.getContext('2d');
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, cssWidth, cssHeight);
+
+    var jours = [];
+    for (var i = 6; i >= 0; i--) {
+      var d = new Date();
+      d.setDate(d.getDate() - i);
+      var dateStr = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+      jours.push({ date: dateStr, label: d.toLocaleDateString('fr-FR', { weekday: 'narrow' }), total: 0 });
+    }
+    state.ventes.forEach(function (v) {
+      var jour = jours.find(function (j) { return j.date === v.date; });
+      if (jour) jour.total += (v.total || 0);
+    });
+
+    var maxVal = Math.max.apply(null, jours.map(function (j) { return j.total; }).concat([1]));
+    var styles = getComputedStyle(document.documentElement);
+    var couleurBarre = styles.getPropertyValue('--accent').trim() || '#AD7A26';
+    var couleurTexte = styles.getPropertyValue('--ink-soft').trim() || '#888';
+
+    var padBottom = 22, padTop = 8;
+    var zoneH = cssHeight - padBottom - padTop;
+    var barW = cssWidth / jours.length;
+
+    ctx.font = '11px "Work Sans", sans-serif';
+    ctx.textAlign = 'center';
+
+    jours.forEach(function (j, idx) {
+      var h = maxVal > 0 ? (j.total / maxVal) * zoneH : 0;
+      h = Math.max(h, j.total > 0 ? 3 : 0);
+      var x = idx * barW + barW * 0.22;
+      var w = barW * 0.56;
+      var y = padTop + (zoneH - h);
+
+      ctx.fillStyle = couleurBarre;
+      var r = Math.min(6, w / 2);
+      ctx.beginPath();
+      ctx.moveTo(x, y + h);
+      ctx.lineTo(x, y + r);
+      ctx.arcTo(x, y, x + r, y, r);
+      ctx.lineTo(x + w - r, y);
+      ctx.arcTo(x + w, y, x + w, y + r, r);
+      ctx.lineTo(x + w, y + h);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.fillStyle = couleurTexte;
+      ctx.fillText(j.label, x + w / 2, cssHeight - 6);
+    });
+  }
+
   function renderDashboard() {
     var ventesP = state.ventes.filter(function (v) { return dansPeriode(v.date); });
     var depensesP = state.depenses.filter(function (d) { return dansPeriode(d.date); });
@@ -1031,12 +1374,41 @@
     document.getElementById('statArticles').textContent = totalArticles;
     setStatAnimated('statValeurStock', valeurStock);
 
-    var lowStock = state.produits.filter(function (p) { return (p.quantite || 0) <= 2; }).slice(0, 6);
+    var totalCreances = state.ventes.reduce(function (s, v) { return s + (v.resteAPayer || 0); }, 0);
+    var creancesCard = document.getElementById('statCreancesCard');
+    if (totalCreances > 0) {
+      creancesCard.style.display = 'block';
+      setStatAnimated('statCreances', totalCreances);
+    } else {
+      creancesCard.style.display = 'none';
+    }
+
+    dessinerGraphiqueVentes();
+
+    var epuises = state.produits.filter(function (p) { return (p.quantite || 0) === 0; });
+    var bas = state.produits.filter(function (p) {
+      var seuil = p.seuilAlerte != null ? p.seuilAlerte : 2;
+      return (p.quantite || 0) > 0 && (p.quantite || 0) <= seuil;
+    }).slice(0, 6);
+
+    var outWrap = document.getElementById('outOfStockWrap');
+    outWrap.innerHTML = epuises.length ? (
+      '<div style="font-size:0.76rem; color:var(--danger); font-weight:600; margin-bottom:6px;">' + epuises.length + ' article' + (epuises.length > 1 ? 's' : '') + ' épuisé' + (epuises.length > 1 ? 's' : '') + '</div>' +
+      '<div class="mini-list">' + epuises.map(function (p) {
+        var catTagClass = p.categorie === 'Femme' ? 'femme' : 'homme';
+        return '<div class="mini-row" style="border-color:var(--danger); border-width:1px;"><div class="who"><span>' + escapeHtml(p.nom) + '</span><span><span class="cat-tag ' + catTagClass + '">' + escapeHtml(p.categorie) + '</span></span></div><div class="amt" style="color:var(--danger);">Épuisé</div></div>';
+      }).join('') + '</div>'
+    ) : '';
+
     var lowList = document.getElementById('lowStockList');
-    lowList.innerHTML = lowStock.length ? lowStock.map(function (p) {
-      var catTagClass = p.categorie === 'Femme' ? 'femme' : 'homme';
-      return '<div class="mini-row"><div class="who"><span>' + escapeHtml(p.nom) + '</span><span><span class="cat-tag ' + catTagClass + '">' + escapeHtml(p.categorie) + '</span></span></div><div class="amt">' + (p.quantite || 0) + ' restant</div></div>';
-    }).join('') : '<div class="empty">Tout est bien approvisionné.</div>';
+    if (bas.length) {
+      lowList.innerHTML = bas.map(function (p) {
+        var catTagClass = p.categorie === 'Femme' ? 'femme' : 'homme';
+        return '<div class="mini-row"><div class="who"><span>' + escapeHtml(p.nom) + '</span><span><span class="cat-tag ' + catTagClass + '">' + escapeHtml(p.categorie) + '</span></span></div><div class="amt">' + (p.quantite || 0) + ' restant</div></div>';
+      }).join('');
+    } else {
+      lowList.innerHTML = epuises.length ? '' : '<div class="empty">Tout est bien approvisionné.</div>';
+    }
 
     var recent = state.ventes.slice().sort(function (a, b) { return (b.timestamp || 0) - (a.timestamp || 0); }).slice(0, 5);
     var recentList = document.getElementById('recentSalesList');
@@ -1048,6 +1420,7 @@
   function renderAll() {
     renderDashboard();
     renderStock();
+    renderDettes();
     renderDepenses();
     renderHistorique();
     if (document.getElementById('view-vente').classList.contains('active')) fillVenteSelect();
