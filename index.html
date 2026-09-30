@@ -183,6 +183,20 @@
   .mini-row .who { display: flex; flex-direction: column; }
   .mini-row .who span:last-child { font-size: 0.76rem; color: var(--ink-soft); }
   .mini-row .amt { font-weight: 600; }
+  .btn-recu-historique {
+    font-family: 'Work Sans', sans-serif;
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--accent);
+    background: transparent;
+    border: 1px solid var(--accent);
+    border-radius: 999px;
+    padding: 4px 10px;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: transform 0.12s ease;
+  }
+  .btn-recu-historique:active { transform: scale(0.94); }
 
   /* Stock list */
   .filter-row { display: flex; gap: 8px; margin: 14px 0; }
@@ -533,7 +547,7 @@
 
         <div id="recuApresVente" style="display:none; margin-top:14px; padding:14px; border-radius:12px; background:var(--bg-raised); border:1px solid var(--line); box-shadow:0 1px 3px var(--shadow);">
           <div style="font-weight:600; margin-bottom:8px;">✓ Vente enregistrée</div>
-          <button type="button" class="btn ghost" id="btnPartagerRecu" style="border:1px solid var(--line); text-align:center;">Partager le reçu (WhatsApp)</button>
+          <button type="button" class="btn ghost" id="btnPartagerRecu" style="border:1px solid var(--line); text-align:center;">Partager le reçu</button>
         </div>
       </section>
     </section>
@@ -1107,24 +1121,132 @@
     }).catch(function () { toast('Erreur lors de la vente'); });
   });
 
-  document.getElementById('btnPartagerRecu').addEventListener('click', function () {
-    if (!derniereVente) return;
+  function genererImageRecu(vente) {
+    var W = 800, PAD = 44;
     var nomBoutique = shopNameEl.textContent.trim() || 'MDD Store';
+    var reference = 'V' + String(vente.timestamp).slice(-8);
+    var dateLabel = new Date(vente.date + 'T00:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }) +
+      ' · ' + new Date(vente.timestamp).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+
     var lignes = [
-      nomBoutique,
-      '',
-      derniereVente.nom + ' × ' + derniereVente.quantite,
-      'Prix unitaire : ' + fmt(derniereVente.prixUnitaire),
-      'Total : ' + fmt(derniereVente.total)
+      ['Référence', reference],
+      ['Article', vente.nom],
+      ['Catégorie', vente.categorie],
+      ['Quantité', String(vente.quantite)],
+      ['Prix unitaire', fmt(vente.prixUnitaire)],
+      ['Total', fmt(vente.total)]
     ];
-    if (derniereVente.modePaiement === 'credit') {
-      lignes.push('Payé : ' + fmt(derniereVente.montantPaye));
-      lignes.push('Reste à payer : ' + fmt(derniereVente.resteAPayer));
+    if (vente.modePaiement === 'credit') {
+      lignes.push(['Client', vente.clientNom || '—']);
+      lignes.push(['Payé', fmt(vente.montantPaye)]);
+      lignes.push(['Reste à payer', fmt(vente.resteAPayer)]);
     }
-    lignes.push('Date : ' + new Date(derniereVente.date + 'T00:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }));
-    var texte = lignes.join('\n');
-    var url = 'https://wa.me/?text=' + encodeURIComponent(texte);
-    window.open(url, '_blank');
+    lignes.push(['Date', dateLabel]);
+
+    var rowH = 58;
+    var H = 210 + lignes.length * rowH + 90;
+
+    var canvas = document.createElement('canvas');
+    var scale = 2;
+    canvas.width = W * scale; canvas.height = H * scale;
+    var ctx = canvas.getContext('2d');
+    ctx.setTransform(scale, 0, 0, scale, 0, 0);
+
+    var bg = '#1D1B20', card = '#26232A', accent = '#D9A54B', ink = '#F2F0ED', inkSoft = '#9D9A96', line = '#38353B';
+
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, W, H);
+
+    // logo monogramme en haut à droite
+    var logoSize = 64;
+    ctx.fillStyle = accent;
+    roundRect(ctx, W - PAD - logoSize, PAD, logoSize, logoSize, 14);
+    ctx.fill();
+    ctx.fillStyle = bg;
+    ctx.font = '700 20px Georgia, serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('MDD', W - PAD - logoSize / 2, PAD + 38);
+
+    // titre
+    ctx.textAlign = 'left';
+    ctx.fillStyle = ink;
+    ctx.font = '600 30px "Work Sans", Arial, sans-serif';
+    ctx.fillText('Reçu de', PAD, PAD + 42);
+    ctx.fillStyle = accent;
+    ctx.font = '700 30px "Work Sans", Arial, sans-serif';
+    ctx.fillText('vente', PAD + 118, PAD + 42);
+
+    ctx.fillStyle = ink;
+    ctx.font = '400 20px "Work Sans", Arial, sans-serif';
+    ctx.fillText(nomBoutique, PAD, PAD + 76);
+
+    // séparateur
+    var y = PAD + 106;
+    ctx.strokeStyle = line;
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(PAD, y); ctx.lineTo(W - PAD, y); ctx.stroke();
+
+    y += 48;
+    lignes.forEach(function (row) {
+      ctx.fillStyle = inkSoft;
+      ctx.font = '600 20px "Work Sans", Arial, sans-serif';
+      ctx.textAlign = 'left';
+      ctx.fillText(row[0], PAD, y);
+
+      ctx.fillStyle = (row[0] === 'Reste à payer') ? '#E2857A' : (row[0] === 'Total' ? accent : ink);
+      ctx.font = '700 22px "Work Sans", Arial, sans-serif';
+      ctx.textAlign = 'right';
+      ctx.fillText(String(row[1]), W - PAD, y);
+      y += rowH;
+    });
+
+    y += 14;
+    ctx.strokeStyle = line;
+    ctx.beginPath(); ctx.moveTo(PAD, y); ctx.lineTo(W - PAD, y); ctx.stroke();
+    y += 40;
+    ctx.fillStyle = inkSoft;
+    ctx.font = 'italic 16px "Work Sans", Arial, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('Reçu généré par ' + nomBoutique, W / 2, y);
+
+    return canvas;
+  }
+
+  function roundRect(ctx, x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+  }
+
+  function partagerRecuVente(vente) {
+    if (!vente) return;
+    var canvas = genererImageRecu(vente);
+    canvas.toBlob(function (blob) {
+      if (!blob) { toast('Erreur de génération du reçu'); return; }
+      var fichier = new File([blob], 'recu-' + vente.date + '.png', { type: 'image/png' });
+
+      if (navigator.canShare && navigator.canShare({ files: [fichier] })) {
+        navigator.share({ files: [fichier], title: 'Reçu de vente' }).catch(function () {});
+      } else {
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        a.href = url;
+        a.download = fichier.name;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setTimeout(function () { URL.revokeObjectURL(url); }, 3000);
+        toast('Reçu téléchargé — joins-le dans WhatsApp');
+      }
+    }, 'image/png');
+  }
+
+  document.getElementById('btnPartagerRecu').addEventListener('click', function () {
+    partagerRecuVente(derniereVente);
   });
 
   // ---------- DETTES ----------
@@ -1234,6 +1356,15 @@
   }
 
   // ---------- HISTORIQUE ----------
+  document.getElementById('historiqueList').addEventListener('click', function (e) {
+    var btn = e.target.closest ? e.target.closest('.btn-recu-historique') : null;
+    if (!btn) return;
+    var venteId = btn.getAttribute('data-vente-id');
+    var v = state.ventes.find(function (x) { return x.id === venteId; });
+    if (v) partagerRecuVente(v);
+    else toast('Vente introuvable');
+  });
+
   function renderHistorique() {
     var list = document.getElementById('historiqueList');
     if (state.ventes.length === 0 && state.depenses.length === 0) {
@@ -1260,7 +1391,12 @@
       var net = totalVentes - totalDepenses;
 
       var rowsVentes = jourVentes.map(function (v) {
-        return '<div class="mini-row"><div class="who"><span>' + escapeHtml(v.nom) + '</span><span>' + v.quantite + ' × ' + fmt(v.prixUnitaire) + '</span></div><div class="amt">' + fmt(v.total) + '</div></div>';
+        return '<div class="mini-row"><div class="who"><span>' + escapeHtml(v.nom) + '</span><span>' + v.quantite + ' × ' + fmt(v.prixUnitaire) + (v.clientNom ? ' · ' + escapeHtml(v.clientNom) : '') + '</span></div>' +
+          '<div style="display:flex; align-items:center; gap:10px;">' +
+            '<div class="amt">' + fmt(v.total) + '</div>' +
+            '<button type="button" class="btn-recu-historique" data-vente-id="' + v.id + '" title="Partager le reçu">Reçu</button>' +
+          '</div>' +
+        '</div>';
       }).join('');
       var rowsDepenses = jourDepenses.map(function (d) {
         return '<div class="mini-row"><div class="who"><span>' + escapeHtml(d.libelle) + '</span><span>' + escapeHtml(d.categorie) + '</span></div><div class="amt">− ' + fmt(d.montant) + '</div></div>';
