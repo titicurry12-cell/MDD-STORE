@@ -212,6 +212,14 @@
     font-family: 'Newsreader', serif; font-size: 1.3rem; color: var(--ink-soft);
   }
   .produit-card .prices { display: flex; gap: 14px; margin-top: 8px; font-size: 0.78rem; color: var(--ink-soft); }
+  .tailles-detail {
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px dashed var(--line);
+    font-size: 0.78rem;
+    color: var(--ink-soft);
+    display: flex; flex-wrap: wrap; gap: 4px 8px;
+  }
 
   .cat-tag {
     display: inline-block;
@@ -468,9 +476,19 @@
       <section class="block">
         <h2>Enregistrer une vente</h2>
         <div class="field">
-          <label for="venteProduit">Article</label>
-          <select id="venteProduit"></select>
+          <label for="venteNom">Article</label>
+          <select id="venteNom"></select>
           <button type="button" class="btn ghost" id="btnNouvelArticleDepuisVente" style="text-align:left; padding-left:0; margin-top:2px;">+ Ajouter un nouvel article</button>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label for="venteCouleur">Couleur</label>
+            <select id="venteCouleur"></select>
+          </div>
+          <div class="field">
+            <label for="venteTaille">Taille</label>
+            <select id="venteTaille"></select>
+          </div>
         </div>
         <div class="field-row">
           <div class="field">
@@ -640,34 +658,15 @@
       <input type="text" id="fCouleurAutre" placeholder="Préciser la couleur" style="display:none; margin-top:6px;">
     </div>
 
-    <!-- Mode NOUVEL ARTICLE : plusieurs tailles d'un coup -->
-    <div id="blocTaillesMulti">
-      <div class="field">
-        <label>Quantités par taille</label>
-        <div style="display:flex; flex-direction:column; gap:8px;">
-          <div class="field-row" style="align-items:center;"><span style="width:90px; color:var(--ink-soft); font-size:0.85rem;">S</span><input type="number" id="fQtyS" min="0" value="0"></div>
-          <div class="field-row" style="align-items:center;"><span style="width:90px; color:var(--ink-soft); font-size:0.85rem;">M</span><input type="number" id="fQtyM" min="0" value="0"></div>
-          <div class="field-row" style="align-items:center;"><span style="width:90px; color:var(--ink-soft); font-size:0.85rem;">L</span><input type="number" id="fQtyL" min="0" value="0"></div>
-          <div class="field-row" style="align-items:center;"><span style="width:90px; color:var(--ink-soft); font-size:0.85rem;">XL</span><input type="number" id="fQtyXL" min="0" value="0"></div>
-          <div class="field-row" style="align-items:center;"><span style="width:90px; color:var(--ink-soft); font-size:0.85rem;">XXL</span><input type="number" id="fQtyXXL" min="0" value="0"></div>
-          <div class="field-row" style="align-items:center;"><span style="width:90px; color:var(--ink-soft); font-size:0.85rem;">Taille unique</span><input type="number" id="fQtyUnique" min="0" value="0"></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Mode MODIFIER : une seule taille -->
-    <div id="blocTailleSingle" style="display:none;">
-      <div class="field">
-        <label for="fTailleSingle">Taille</label>
-        <select id="fTailleSingle">
-          <option>S</option><option>M</option><option>L</option><option>XL</option><option>XXL</option>
-          <option>Taille unique</option><option value="Autre">Autre (préciser)</option>
-        </select>
-        <input type="text" id="fTailleSingleAutre" placeholder="Préciser la taille" style="display:none; margin-top:6px;">
-      </div>
-      <div class="field">
-        <label for="fQuantite">Quantité en stock</label>
-        <input type="number" id="fQuantite" min="0" value="1">
+    <div class="field">
+      <label>Quantités par taille</label>
+      <div style="display:flex; flex-direction:column; gap:8px;">
+        <div class="field-row" style="align-items:center;"><span style="width:90px; color:var(--ink-soft); font-size:0.85rem;">S</span><input type="number" id="fQtyS" min="0" value="0"></div>
+        <div class="field-row" style="align-items:center;"><span style="width:90px; color:var(--ink-soft); font-size:0.85rem;">M</span><input type="number" id="fQtyM" min="0" value="0"></div>
+        <div class="field-row" style="align-items:center;"><span style="width:90px; color:var(--ink-soft); font-size:0.85rem;">L</span><input type="number" id="fQtyL" min="0" value="0"></div>
+        <div class="field-row" style="align-items:center;"><span style="width:90px; color:var(--ink-soft); font-size:0.85rem;">XL</span><input type="number" id="fQtyXL" min="0" value="0"></div>
+        <div class="field-row" style="align-items:center;"><span style="width:90px; color:var(--ink-soft); font-size:0.85rem;">XXL</span><input type="number" id="fQtyXXL" min="0" value="0"></div>
+        <div class="field-row" style="align-items:center;"><span style="width:90px; color:var(--ink-soft); font-size:0.85rem;">Taille unique</span><input type="number" id="fQtyUnique" min="0" value="0"></div>
       </div>
     </div>
 
@@ -832,7 +831,8 @@
       var matchCat = state.stockFilter === 'Tout' || p.categorie === state.stockFilter;
       if (!matchCat) return false;
       if (!recherche) return true;
-      var champs = [p.nom, p.couleur, p.taille, p.categorie].join(' ').toLowerCase();
+      var taillesTxt = p.tailles ? Object.keys(p.tailles).join(' ') : '';
+      var champs = [p.nom, p.couleur, taillesTxt, p.categorie].join(' ').toLowerCase();
       return champs.indexOf(recherche) !== -1;
     }).sort(function (a, b) { return (a.nom || '').localeCompare(b.nom || ''); });
 
@@ -844,20 +844,30 @@
     }
     list.innerHTML = items.map(function (p) {
       var seuil = p.seuilAlerte != null ? p.seuilAlerte : 2;
-      var epuise = (p.quantite || 0) === 0;
-      var low = !epuise && (p.quantite || 0) <= seuil;
+      var total = quantiteTotale(p);
+      var epuise = total === 0;
+      var low = !epuise && total <= seuil;
       var catClass = p.categorie === 'Femme' ? 'cat-femme' : 'cat-homme';
       var catTagClass = p.categorie === 'Femme' ? 'femme' : 'homme';
       var photoHtml = p.photo
         ? '<img src="' + p.photo + '" class="produit-thumb">'
         : '<div class="produit-thumb produit-thumb-empty">' + escapeHtml((p.nom || '?').charAt(0).toUpperCase()) + '</div>';
+
+      var tailles = p.tailles || {};
+      var detailTailles = TAILLES_ORDRE.filter(function (t) { return tailles[t] != null; }).map(function (t) {
+        var v = tailles[t] || 0;
+        var cls = v === 0 ? 'style="color:var(--danger); font-weight:700;"' : '';
+        return '<span ' + cls + '>' + escapeHtml(t) + ' : ' + v + '</span>';
+      }).join(' <span style="opacity:0.4;">·</span> ');
+
       return '<div class="produit-card ' + catClass + '" data-id="' + p.id + '">' +
         '<div class="row1">' +
           photoHtml +
           '<div style="flex:1; min-width:0;"><div class="nom">' + escapeHtml(p.nom) + '</div>' +
-          '<div class="meta"><span class="cat-tag ' + catTagClass + '">' + escapeHtml(p.categorie) + '</span>' + (p.taille ? 'Taille ' + escapeHtml(p.taille) : '') + (p.couleur ? ' · ' + escapeHtml(p.couleur) : '') + '</div></div>' +
-          '<div class="qty' + (low ? ' low' : '') + (epuise ? ' epuise' : '') + '">' + (epuise ? 'Épuisé' : (p.quantite || 0)) + '</div>' +
+          '<div class="meta"><span class="cat-tag ' + catTagClass + '">' + escapeHtml(p.categorie) + '</span>' + (p.couleur ? escapeHtml(p.couleur) : '') + '</div></div>' +
+          '<div class="qty' + (low ? ' low' : '') + (epuise ? ' epuise' : '') + '">' + (epuise ? 'Épuisé' : total) + '</div>' +
         '</div>' +
+        (detailTailles ? '<div class="tailles-detail">' + detailTailles + '</div>' : '') +
         '<div class="prices"><span>Achat ' + fmt(p.prixAchat) + '</span><span>Vente ' + fmt(p.prixVente) + '</span></div>' +
       '</div>';
     }).join('');
@@ -953,14 +963,16 @@
   });
 
   var COULEURS_STANDARD = ['Noir', 'Blanc', 'Bleu', 'Rouge', 'Vert', 'Jaune', 'Rose', 'Gris', 'Beige', 'Marron', 'Orange', 'Violet', 'Multicolore'];
-  var TAILLES_STANDARD = ['S', 'M', 'L', 'XL', 'XXL', 'Taille unique'];
-  var TAILLES_MULTI_IDS = [['S', 'fQtyS'], ['M', 'fQtyM'], ['L', 'fQtyL'], ['XL', 'fQtyXL'], ['XXL', 'fQtyXXL'], ['Taille unique', 'fQtyUnique']];
+  var TAILLES_ORDRE = ['S', 'M', 'L', 'XL', 'XXL', 'Taille unique'];
+  var TAILLES_CHAMP_IDS = [['S', 'fQtyS'], ['M', 'fQtyM'], ['L', 'fQtyL'], ['XL', 'fQtyXL'], ['XXL', 'fQtyXXL'], ['Taille unique', 'fQtyUnique']];
+
+  function quantiteTotale(p) {
+    if (!p || !p.tailles) return 0;
+    return Object.keys(p.tailles).reduce(function (s, k) { return s + (p.tailles[k] || 0); }, 0);
+  }
 
   document.getElementById('fCouleur').addEventListener('change', function () {
     document.getElementById('fCouleurAutre').style.display = (this.value === 'Autre') ? 'block' : 'none';
-  });
-  document.getElementById('fTailleSingle').addEventListener('change', function () {
-    document.getElementById('fTailleSingleAutre').style.display = (this.value === 'Autre') ? 'block' : 'none';
   });
 
   function openProduitSheet(id) {
@@ -978,7 +990,6 @@
       x.classList.toggle('active', x.getAttribute('data-cat') === currentCat);
     });
 
-    // Couleur (dropdown partagé)
     var couleurSel = document.getElementById('fCouleur');
     var couleurVal = p ? (p.couleur || '') : '';
     if (couleurVal && COULEURS_STANDARD.indexOf(couleurVal) === -1) {
@@ -991,29 +1002,12 @@
       document.getElementById('fCouleurAutre').value = '';
     }
 
-    if (p) {
-      // MODE MODIFIER : une seule taille
-      document.getElementById('blocTaillesMulti').style.display = 'none';
-      document.getElementById('blocTailleSingle').style.display = 'block';
-      document.getElementById('fQuantite').value = p.quantite;
-      var tailleSel = document.getElementById('fTailleSingle');
-      if (p.taille && TAILLES_STANDARD.indexOf(p.taille) === -1) {
-        tailleSel.value = 'Autre';
-        document.getElementById('fTailleSingleAutre').style.display = 'block';
-        document.getElementById('fTailleSingleAutre').value = p.taille;
-      } else {
-        tailleSel.value = p.taille || 'M';
-        document.getElementById('fTailleSingleAutre').style.display = 'none';
-        document.getElementById('fTailleSingleAutre').value = '';
-      }
-      document.getElementById('btnSupprimerProduit').style.display = 'block';
-    } else {
-      // MODE NOUVEL ARTICLE : plusieurs tailles
-      document.getElementById('blocTaillesMulti').style.display = 'block';
-      document.getElementById('blocTailleSingle').style.display = 'none';
-      TAILLES_MULTI_IDS.forEach(function (pair) { document.getElementById(pair[1]).value = 0; });
-      document.getElementById('btnSupprimerProduit').style.display = 'none';
-    }
+    var tailles = (p && p.tailles) || {};
+    TAILLES_CHAMP_IDS.forEach(function (pair) {
+      document.getElementById(pair[1]).value = tailles[pair[0]] || 0;
+    });
+
+    document.getElementById('btnSupprimerProduit').style.display = p ? 'block' : 'none';
     sheetProduit.classList.add('open');
   }
   function closeProduitSheet() { sheetProduit.classList.remove('open'); state.editingId = null; }
@@ -1030,43 +1024,41 @@
     if (!couleur) { toast('Choisissez une couleur'); return; }
     if (!db) { toast('Stockage indisponible'); return; }
 
-    var base = {
+    var docExistant = state.editingId ? state.produits.find(function (x) { return x.id === state.editingId; }) : null;
+    if (!docExistant) {
+      // Fusionne avec un article existant de même nom + couleur, s'il existe déjà
+      docExistant = state.produits.find(function (x) {
+        return x.nom.trim().toLowerCase() === nom.toLowerCase() && (x.couleur || '').toLowerCase() === couleur.toLowerCase();
+      });
+    }
+    var taillesAvant = (docExistant && docExistant.tailles) || {};
+
+    var tailles = {};
+    var total = 0;
+    TAILLES_CHAMP_IDS.forEach(function (pair) {
+      var v = Math.max(0, Number(document.getElementById(pair[1]).value) || 0);
+      total += v;
+      if (v > 0 || taillesAvant[pair[0]] != null) tailles[pair[0]] = v;
+    });
+    if (total === 0) { toast('Indiquez au moins une quantité pour une taille'); return; }
+
+    var data = {
       nom: nom,
       categorie: currentCat,
       couleur: couleur,
+      tailles: tailles,
       prixAchat: Number(document.getElementById('fPrixAchat').value) || 0,
       prixVente: Number(document.getElementById('fPrixVente').value) || 0,
       seuilAlerte: Number(document.getElementById('fSeuil').value) || 0,
       photo: photoDataUrl || null
     };
 
-    if (state.editingId) {
-      var tailleSel = document.getElementById('fTailleSingle').value;
-      var taille = tailleSel === 'Autre' ? document.getElementById('fTailleSingleAutre').value.trim() : tailleSel;
-      if (!taille) { toast('Choisissez une taille'); return; }
-      var data = Object.assign({}, base, {
-        taille: taille,
-        quantite: Number(document.getElementById('fQuantite').value) || 0
-      });
-      db.collection('produits').doc(state.editingId).set(data).then(function () {
-        toast('Article enregistré');
-        closeProduitSheet();
-      }).catch(function () { toast('Erreur : article non enregistré'); });
-    } else {
-      var aCreer = TAILLES_MULTI_IDS.map(function (pair) {
-        return { taille: pair[0], quantite: Number(document.getElementById(pair[1]).value) || 0 };
-      }).filter(function (x) { return x.quantite > 0; });
-
-      if (aCreer.length === 0) { toast('Indiquez au moins une quantité pour une taille'); return; }
-
-      var promesses = aCreer.map(function (x) {
-        return db.collection('produits').doc().set(Object.assign({}, base, { taille: x.taille, quantite: x.quantite }));
-      });
-      Promise.all(promesses).then(function () {
-        toast(aCreer.length + ' taille(s) enregistrée(s)');
-        closeProduitSheet();
-      }).catch(function () { toast('Erreur : article non enregistré'); });
-    }
+    var cible = docExistant ? docExistant.id : null;
+    var ref = cible ? db.collection('produits').doc(cible) : db.collection('produits').doc();
+    ref.set(data).then(function () {
+      toast('Article enregistré');
+      closeProduitSheet();
+    }).catch(function () { toast('Erreur : article non enregistré'); });
   });
 
   document.getElementById('btnSupprimerProduit').addEventListener('click', function () {
@@ -1080,30 +1072,77 @@
     });
   });
 
-  // ---------- VENTE ----------
+  // ---------- VENTE (cascade Article → Couleur → Taille) ----------
+  function produitsDisponibles() {
+    return state.produits.filter(function (p) { return quantiteTotale(p) > 0; });
+  }
+
   function fillVenteSelect() {
-    var sel = document.getElementById('venteProduit');
-    var disponibles = state.produits.filter(function (p) { return (p.quantite || 0) > 0; });
-    if (disponibles.length === 0) {
-      sel.innerHTML = '<option value="">Aucun article disponible</option>';
+    var selNom = document.getElementById('venteNom');
+    var noms = [];
+    produitsDisponibles().forEach(function (p) {
+      if (noms.indexOf(p.nom) === -1) noms.push(p.nom);
+    });
+    noms.sort(function (a, b) { return a.localeCompare(b); });
+
+    if (noms.length === 0) {
+      selNom.innerHTML = '<option value="">Aucun article disponible</option>';
+      document.getElementById('venteCouleur').innerHTML = '';
+      document.getElementById('venteTaille').innerHTML = '';
       document.getElementById('ventePrix').value = '';
       updateVenteTotal();
       return;
     }
-    sel.innerHTML = disponibles.map(function (p) {
-      return '<option value="' + p.id + '">' + escapeHtml(p.nom) + (p.taille ? ' - ' + escapeHtml(p.taille) : '') + ' (' + p.quantite + ' en stock)</option>';
-    }).join('');
-    onVenteProduitChange();
+    var nomActuel = noms.indexOf(selNom.value) !== -1 ? selNom.value : noms[0];
+    selNom.innerHTML = noms.map(function (n) { return '<option value="' + escapeHtml(n) + '">' + escapeHtml(n) + '</option>'; }).join('');
+    selNom.value = nomActuel;
+    remplirVenteCouleur();
   }
 
-  function onVenteProduitChange() {
-    var sel = document.getElementById('venteProduit');
-    var p = state.produits.find(function (x) { return x.id === sel.value; });
+  function remplirVenteCouleur() {
+    var nom = document.getElementById('venteNom').value;
+    var selCouleur = document.getElementById('venteCouleur');
+    var variantes = produitsDisponibles().filter(function (p) { return p.nom === nom; });
+    var couleurActuelle = selCouleur.value;
+    selCouleur.innerHTML = variantes.map(function (p) {
+      return '<option value="' + escapeHtml(p.id) + '">' + escapeHtml(p.couleur || '—') + '</option>';
+    }).join('');
+    var match = variantes.find(function (p) { return p.id === couleurActuelle; });
+    selCouleur.value = match ? match.id : (variantes[0] ? variantes[0].id : '');
+    remplirVenteTaille();
+  }
+
+  function remplirVenteTaille() {
+    var selCouleur = document.getElementById('venteCouleur');
+    var selTaille = document.getElementById('venteTaille');
+    var p = state.produits.find(function (x) { return x.id === selCouleur.value; });
+    var tailleActuelle = selTaille.value;
+    if (!p) { selTaille.innerHTML = ''; onVenteVarianteChange(); return; }
+    var taillesDispo = TAILLES_ORDRE.filter(function (t) { return (p.tailles || {})[t] > 0; });
+    selTaille.innerHTML = taillesDispo.map(function (t) {
+      return '<option value="' + escapeHtml(t) + '">' + escapeHtml(t) + ' (' + p.tailles[t] + ' en stock)</option>';
+    }).join('');
+    if (taillesDispo.indexOf(tailleActuelle) !== -1) selTaille.value = tailleActuelle;
+    onVenteVarianteChange();
+  }
+
+  function venteProduitSelectionne() {
+    var selCouleur = document.getElementById('venteCouleur');
+    return state.produits.find(function (x) { return x.id === selCouleur.value; });
+  }
+
+  function onVenteVarianteChange() {
+    var p = venteProduitSelectionne();
+    var taille = document.getElementById('venteTaille').value;
     document.getElementById('ventePrix').value = p ? p.prixVente : '';
     var qteInput = document.getElementById('venteQte');
-    if (p) qteInput.max = p.quantite;
+    if (p && taille) qteInput.max = (p.tailles || {})[taille] || 0;
     updateVenteTotal();
   }
+
+  document.getElementById('venteNom').addEventListener('change', remplirVenteCouleur);
+  document.getElementById('venteCouleur').addEventListener('change', remplirVenteTaille);
+  document.getElementById('venteTaille').addEventListener('change', onVenteVarianteChange);
 
   function updateVenteTotal() {
     var qte = Number(document.getElementById('venteQte').value) || 0;
@@ -1129,20 +1168,20 @@
   document.getElementById('creditMontantPaye').addEventListener('input', updateCreditReste);
 
   document.getElementById('btnNouvelArticleDepuisVente').addEventListener('click', function () { openProduitSheet(null); });
-  document.getElementById('venteProduit').addEventListener('change', onVenteProduitChange);
   document.getElementById('venteQte').addEventListener('input', updateVenteTotal);
   document.getElementById('ventePrix').addEventListener('input', updateVenteTotal);
 
   var derniereVente = null;
 
   document.getElementById('btnEnregistrerVente').addEventListener('click', function () {
-    var sel = document.getElementById('venteProduit');
-    var p = state.produits.find(function (x) { return x.id === sel.value; });
-    if (!p) { toast('Choisissez un article'); return; }
+    var p = venteProduitSelectionne();
+    var taille = document.getElementById('venteTaille').value;
+    if (!p || !taille) { toast('Choisissez un article, une couleur et une taille'); return; }
+    var stockTaille = (p.tailles || {})[taille] || 0;
     var qte = Number(document.getElementById('venteQte').value) || 0;
     var prix = Number(document.getElementById('ventePrix').value) || 0;
     if (qte <= 0) { toast('Quantité invalide'); return; }
-    if (qte > (p.quantite || 0)) { toast('Stock insuffisant (' + p.quantite + ' restant)'); return; }
+    if (qte > stockTaille) { toast('Stock insuffisant (' + stockTaille + ' restant en taille ' + taille + ')'); return; }
     if (!db) { toast('Stockage indisponible'); return; }
 
     var total = qte * prix;
@@ -1160,6 +1199,8 @@
       produitId: p.id,
       nom: p.nom,
       categorie: p.categorie,
+      couleur: p.couleur || '',
+      taille: taille,
       quantite: qte,
       prixUnitaire: prix,
       prixAchatUnitaire: p.prixAchat || 0,
@@ -1172,8 +1213,11 @@
       timestamp: Date.now()
     };
 
+    var champMAJ = {};
+    champMAJ['tailles.' + taille] = stockTaille - qte;
+
     db.collection('ventes').add(vente).then(function () {
-      return db.collection('produits').doc(p.id).update({ quantite: (p.quantite || 0) - qte });
+      return db.collection('produits').doc(p.id).update(champMAJ);
     }).then(function () {
       toast('Vente enregistrée');
       derniereVente = Object.assign({}, vente);
@@ -1197,6 +1241,8 @@
     var lignes = [
       ['Référence', reference],
       ['Article', vente.nom],
+      ['Couleur', vente.couleur || '—'],
+      ['Taille', vente.taille || '—'],
       ['Catégorie', vente.categorie],
       ['Quantité', String(vente.quantite)],
       ['Prix unitaire', fmt(vente.prixUnitaire)],
@@ -1466,7 +1512,8 @@
       var net = totalVentes - totalDepenses;
 
       var rowsVentes = jourVentes.map(function (v) {
-        return '<div class="mini-row"><div class="who"><span>' + escapeHtml(v.nom) + '</span><span>' + v.quantite + ' × ' + fmt(v.prixUnitaire) + (v.clientNom ? ' · ' + escapeHtml(v.clientNom) : '') + '</span></div>' +
+        var variante = [v.couleur, v.taille ? 'Taille ' + v.taille : ''].filter(Boolean).join(' · ');
+        return '<div class="mini-row"><div class="who"><span>' + escapeHtml(v.nom) + (variante ? ' · ' + escapeHtml(variante) : '') + '</span><span>' + v.quantite + ' × ' + fmt(v.prixUnitaire) + (v.clientNom ? ' · ' + escapeHtml(v.clientNom) : '') + '</span></div>' +
           '<div style="display:flex; align-items:center; gap:10px;">' +
             '<div class="amt">' + fmt(v.total) + '</div>' +
             '<button type="button" class="btn-recu-historique" data-vente-id="' + v.id + '" title="Partager le reçu">Reçu</button>' +
@@ -1576,8 +1623,8 @@
     var totalDepensesP = depensesP.reduce(function (s, d) { return s + (d.montant || 0); }, 0);
     var beneficeBrutP = ventesP.reduce(function (s, v) { return s + ((v.prixUnitaire - (v.prixAchatUnitaire || 0)) * v.quantite); }, 0);
     var beneficeNetP = beneficeBrutP - totalDepensesP;
-    var totalArticles = state.produits.reduce(function (s, p) { return s + (p.quantite || 0); }, 0);
-    var valeurStock = state.produits.reduce(function (s, p) { return s + (p.quantite || 0) * (p.prixVente || 0); }, 0);
+    var totalArticles = state.produits.reduce(function (s, p) { return s + quantiteTotale(p); }, 0);
+    var valeurStock = state.produits.reduce(function (s, p) { return s + quantiteTotale(p) * (p.prixVente || 0); }, 0);
 
     setStatAnimated('statVentesJour', totalVentesP);
     setStatAnimated('statDepensesJour', totalDepensesP);
@@ -1596,29 +1643,37 @@
 
     dessinerGraphiqueVentes();
 
-    var epuises = state.produits.filter(function (p) { return (p.quantite || 0) === 0; });
-    var bas = state.produits.filter(function (p) {
+    var variantesEpuisees = [];
+    var variantesBasses = [];
+    state.produits.forEach(function (p) {
       var seuil = p.seuilAlerte != null ? p.seuilAlerte : 2;
-      return (p.quantite || 0) > 0 && (p.quantite || 0) <= seuil;
-    }).slice(0, 6);
+      var tailles = p.tailles || {};
+      Object.keys(tailles).forEach(function (t) {
+        var v = tailles[t] || 0;
+        var ligne = { nom: p.nom, couleur: p.couleur, categorie: p.categorie, taille: t, qty: v };
+        if (v === 0) variantesEpuisees.push(ligne);
+        else if (v <= seuil) variantesBasses.push(ligne);
+      });
+    });
+    variantesBasses = variantesBasses.slice(0, 6);
 
     var outWrap = document.getElementById('outOfStockWrap');
-    outWrap.innerHTML = epuises.length ? (
-      '<div style="font-size:0.76rem; color:var(--danger); font-weight:600; margin-bottom:6px;">' + epuises.length + ' article' + (epuises.length > 1 ? 's' : '') + ' épuisé' + (epuises.length > 1 ? 's' : '') + '</div>' +
-      '<div class="mini-list">' + epuises.map(function (p) {
-        var catTagClass = p.categorie === 'Femme' ? 'femme' : 'homme';
-        return '<div class="mini-row" style="border-color:var(--danger); border-width:1px;"><div class="who"><span>' + escapeHtml(p.nom) + '</span><span><span class="cat-tag ' + catTagClass + '">' + escapeHtml(p.categorie) + '</span></span></div><div class="amt" style="color:var(--danger);">Épuisé</div></div>';
+    outWrap.innerHTML = variantesEpuisees.length ? (
+      '<div style="font-size:0.76rem; color:var(--danger); font-weight:600; margin-bottom:6px;">' + variantesEpuisees.length + ' taille(s) épuisée(s)</div>' +
+      '<div class="mini-list">' + variantesEpuisees.map(function (v) {
+        var catTagClass = v.categorie === 'Femme' ? 'femme' : 'homme';
+        return '<div class="mini-row" style="border-color:var(--danger); border-width:1px;"><div class="who"><span>' + escapeHtml(v.nom) + ' · ' + escapeHtml(v.couleur || '') + ' · Taille ' + escapeHtml(v.taille) + '</span><span><span class="cat-tag ' + catTagClass + '">' + escapeHtml(v.categorie) + '</span></span></div><div class="amt" style="color:var(--danger);">Épuisé</div></div>';
       }).join('') + '</div>'
     ) : '';
 
     var lowList = document.getElementById('lowStockList');
-    if (bas.length) {
-      lowList.innerHTML = bas.map(function (p) {
-        var catTagClass = p.categorie === 'Femme' ? 'femme' : 'homme';
-        return '<div class="mini-row"><div class="who"><span>' + escapeHtml(p.nom) + '</span><span><span class="cat-tag ' + catTagClass + '">' + escapeHtml(p.categorie) + '</span></span></div><div class="amt">' + (p.quantite || 0) + ' restant</div></div>';
+    if (variantesBasses.length) {
+      lowList.innerHTML = variantesBasses.map(function (v) {
+        var catTagClass = v.categorie === 'Femme' ? 'femme' : 'homme';
+        return '<div class="mini-row"><div class="who"><span>' + escapeHtml(v.nom) + ' · ' + escapeHtml(v.couleur || '') + ' · Taille ' + escapeHtml(v.taille) + '</span><span><span class="cat-tag ' + catTagClass + '">' + escapeHtml(v.categorie) + '</span></span></div><div class="amt">' + v.qty + ' restant</div></div>';
       }).join('');
     } else {
-      lowList.innerHTML = epuises.length ? '' : '<div class="empty">Tout est bien approvisionné.</div>';
+      lowList.innerHTML = variantesEpuisees.length ? '' : '<div class="empty">Tout est bien approvisionné.</div>';
     }
 
     var recent = state.ventes.slice().sort(function (a, b) { return (b.timestamp || 0) - (a.timestamp || 0); }).slice(0, 5);
