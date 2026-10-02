@@ -3,80 +3,41 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>MDD Store</title>
+<title>MDD-Shôp</title>
 <link rel="manifest" href="manifest.json">
 <link rel="icon" type="image/png" href="icon-192.png">
-<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="MDD">
-<meta name="theme-color" content="#211C2E">
+<meta name="theme-color" content="#150B22">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,500&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root {
     box-sizing: border-box;
-    --bg: #F7F6F4;
-    --bg-raised: #FFFFFF;
-    --ink: #1D1B20;
-    --ink-soft: #75726E;
-    --line: #E8E5E0;
-    --accent: #AD7A26;
-    --accent-ink: #FFFFFF;
-    --primary-btn: #1D1B20;
-    --primary-btn-ink: #FFFFFF;
-    --femme: #B23D63;
-    --homme: #2A5680;
-    --chip-ink: #FFFFFF;
-    --danger: #C0392B;
-    --danger-bg: #FBEAE7;
-    --tab-bg: #FFFFFF;
-    --shadow: rgba(29, 27, 32, 0.06);
-    --shadow-strong: rgba(29, 27, 32, 0.12);
+    --bg: #150B22;
+    --bg-raised: #221233;
+    --ink: #F3E9FA;
+    --ink-soft: #B6A0CC;
+    --line: #3A2350;
+    --accent: #D9B24C;
+    --accent-ink: #1A0E2E;
+    --primary-btn: #D9B24C;
+    --primary-btn-ink: #1A0E2E;
+    --femme: #D9698F;
+    --homme: #6F8FCB;
+    --chip-ink: #1A0E2E;
+    --danger: #E2685A;
+    --danger-bg: #3A1F24;
+    --tab-bg: #1C0F2C;
+    --shadow: rgba(0, 0, 0, 0.35);
+    --shadow-strong: rgba(0, 0, 0, 0.55);
     padding-top: env(safe-area-inset-top, 0px);
     padding-bottom: env(safe-area-inset-bottom, 0px);
   }
-  @media (prefers-color-scheme: dark) {
-    :root:not([data-theme="light"]) {
-      --bg: #141316;
-      --bg-raised: #1F1E22;
-      --ink: #F2F0ED;
-      --ink-soft: #9D9A96;
-      --line: #322F33;
-      --accent: #D9A54B;
-      --accent-ink: #211705;
-      --primary-btn: #F2F0ED;
-      --primary-btn-ink: #1A1918;
-      --femme: #E0839F;
-      --homme: #7AABD4;
-      --chip-ink: #171417;
-      --danger: #E2857A;
-      --danger-bg: #332220;
-      --tab-bg: #1F1E22;
-      --shadow: rgba(0, 0, 0, 0.28);
-      --shadow-strong: rgba(0, 0, 0, 0.45);
-    }
-  }
-  :root[data-theme="dark"] {
-    --bg: #141316;
-    --bg-raised: #1F1E22;
-    --ink: #F2F0ED;
-    --ink-soft: #9D9A96;
-    --line: #322F33;
-    --accent: #D9A54B;
-    --accent-ink: #211705;
-    --primary-btn: #F2F0ED;
-    --primary-btn-ink: #1A1918;
-    --femme: #E0839F;
-    --homme: #7AABD4;
-    --chip-ink: #171417;
-    --danger: #E2857A;
-    --danger-bg: #332220;
-    --tab-bg: #1F1E22;
-    --shadow: rgba(0, 0, 0, 0.28);
-    --shadow-strong: rgba(0, 0, 0, 0.45);
-  }
+
   html { scroll-padding-top: env(safe-area-inset-top, 0px); }
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   button, a, input, select, [contenteditable] { touch-action: manipulation; }
@@ -100,9 +61,9 @@
   header.top {
     padding: calc(env(safe-area-inset-top, 0px) + 18px) 20px 14px;
     display: flex;
-    align-items: baseline;
+    align-items: center;
     justify-content: space-between;
-    gap: 8px;
+    gap: 12px;
   }
   header.top .name-wrap { flex: 1; min-width: 0; }
   header.top h1 {
@@ -414,11 +375,15 @@
 </style>
 </head>
 <body>
-<div id="app" style="display:none;">
+<div aria-hidden="true" style="position:fixed; inset:0; z-index:0; display:flex; align-items:center; justify-content:center; overflow:hidden; pointer-events:none;">
+  <img src="logo.png" alt="" style="width:135vw; max-width:900px; opacity:0.05; filter:saturate(1.1);">
+</div>
+<div id="app" style="display:none; position:relative; z-index:1;">
 
   <header class="top">
+    <img src="logo.png" alt="MDD-Shôp" style="width:42px; height:42px; border-radius:11px; flex-shrink:0; box-shadow:0 2px 8px var(--shadow-strong);">
     <div class="name-wrap">
-      <h1 id="shopName" contenteditable="true" spellcheck="false">MDD Store</h1>
+      <h1 id="shopName" contenteditable="true" spellcheck="false">MDD-Shôp</h1>
       <div class="tagline" id="dateToday"></div>
     </div>
     <button type="button" id="btnDeconnexion" class="btn ghost" style="width:auto; padding:6px 10px; font-size:0.72rem; margin-top:0;">Déconnexion</button>
@@ -616,7 +581,7 @@
 <!-- ECRAN DE CONNEXION -->
 <div id="authScreen" style="min-height:100%; display:flex; align-items:center; justify-content:center; padding:24px;">
   <div style="width:100%; max-width:400px;">
-    <h1 class="display" style="font-size:1.8rem; text-align:center; margin-bottom:4px;">MDD Store</h1>
+    <img src="logo.png" alt="MDD-Shôp" style="width:132px; height:132px; border-radius:24px; display:block; margin:0 auto 16px; box-shadow:0 8px 28px var(--shadow-strong);">
     <p style="text-align:center; color:var(--ink-soft); font-size:0.85rem; margin-bottom:24px;">Connecte-toi pour accéder à ton espace</p>
 
     <div class="field">
@@ -734,6 +699,9 @@
     messagingSenderId: "864658975890",
     appId: "1:864658975890:web:fc621211dac18a0f978a4b"
   };
+  var logoImgEl = new Image();
+  logoImgEl.src = 'logo.png';
+
   firebase.initializeApp(firebaseConfig);
   var auth = firebase.auth();
   var firestore = firebase.firestore();
@@ -822,7 +790,7 @@
   // ---------- SHOP NAME ----------
   var shopNameEl = document.getElementById('shopName');
   shopNameEl.addEventListener('blur', function () {
-    var name = shopNameEl.textContent.trim() || 'MDD Store';
+    var name = shopNameEl.textContent.trim() || 'MDD-Shôp';
     shopNameEl.textContent = name;
     if (db) db.doc('reglages/boutique').set({ nom: name }).catch(function () {});
   });
@@ -1123,7 +1091,7 @@
 
   function genererImageRecu(vente) {
     var W = 800, PAD = 44;
-    var nomBoutique = shopNameEl.textContent.trim() || 'MDD Store';
+    var nomBoutique = shopNameEl.textContent.trim() || 'MDD-Shôp';
     var reference = 'V' + String(vente.timestamp).slice(-8);
     var dateLabel = new Date(vente.date + 'T00:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }) +
       ' · ' + new Date(vente.timestamp).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
@@ -1152,20 +1120,29 @@
     var ctx = canvas.getContext('2d');
     ctx.setTransform(scale, 0, 0, scale, 0, 0);
 
-    var bg = '#1D1B20', card = '#26232A', accent = '#D9A54B', ink = '#F2F0ED', inkSoft = '#9D9A96', line = '#38353B';
+    var bg = '#150B22', accent = '#D9B24C', ink = '#F3E9FA', inkSoft = '#B6A0CC', line = '#3A2350';
 
     ctx.fillStyle = bg;
     ctx.fillRect(0, 0, W, H);
 
-    // logo monogramme en haut à droite
-    var logoSize = 64;
-    ctx.fillStyle = accent;
-    roundRect(ctx, W - PAD - logoSize, PAD, logoSize, logoSize, 14);
-    ctx.fill();
-    ctx.fillStyle = bg;
-    ctx.font = '700 20px Georgia, serif';
-    ctx.textAlign = 'center';
-    ctx.fillText('MDD', W - PAD - logoSize / 2, PAD + 38);
+    // logo en haut à droite
+    var logoSize = 68;
+    var logoX = W - PAD - logoSize, logoY = PAD;
+    if (logoImgEl && logoImgEl.complete && logoImgEl.naturalWidth > 0) {
+      ctx.save();
+      roundRect(ctx, logoX, logoY, logoSize, logoSize, 14);
+      ctx.clip();
+      ctx.drawImage(logoImgEl, logoX, logoY, logoSize, logoSize);
+      ctx.restore();
+    } else {
+      ctx.fillStyle = accent;
+      roundRect(ctx, logoX, logoY, logoSize, logoSize, 14);
+      ctx.fill();
+      ctx.fillStyle = bg;
+      ctx.font = '700 20px Georgia, serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('MDD', logoX + logoSize / 2, logoY + 40);
+    }
 
     // titre
     ctx.textAlign = 'left';
@@ -1737,7 +1714,7 @@
 
     unsubscribers.push(db.doc('reglages/boutique').onSnapshot(function (snap) {
       var data = snap.data();
-      shopNameEl.textContent = (data && data.nom) ? data.nom : 'MDD Store';
+      shopNameEl.textContent = (data && data.nom) ? data.nom : 'MDD-Shôp';
     }, function () {}));
 
     unsubscribers.push(db.collection('produits').onSnapshot(function (snap) {
