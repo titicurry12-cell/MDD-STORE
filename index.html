@@ -957,6 +957,11 @@
     afficherPhotoPreview(null);
   });
 
+  function quantiteTotale(p) {
+    if (!p || !p.tailles) return 0;
+    return Object.keys(p.tailles).reduce(function (s, k) { return s + (p.tailles[k] || 0); }, 0);
+  }
+
   var COULEURS_STANDARD = ['Noir', 'Blanc', 'Bleu', 'Rouge', 'Vert', 'Jaune', 'Rose', 'Gris', 'Beige', 'Marron', 'Orange', 'Violet', 'Multicolore'];
   var TAILLES_VETEMENT = ['S', 'M', 'L', 'XL', 'XXL', 'XXXL', 'Taille unique'];
   var POINTURES_CHAUSSURE = (function () { var a = []; for (var i = 20; i <= 42; i++) a.push(String(i)); return a; })();
