@@ -481,12 +481,12 @@
           <button type="button" class="btn ghost" id="btnNouvelArticleDepuisVente" style="text-align:left; padding-left:0; margin-top:2px;">+ Ajouter un nouvel article</button>
         </div>
         <div class="field-row">
-          <div class="field">
+          <div class="field" id="venteCouleurWrap">
             <label for="venteCouleur">Couleur</label>
             <select id="venteCouleur"></select>
           </div>
           <div class="field">
-            <label for="venteTaille">Taille</label>
+            <label for="venteTaille" id="labelVenteTaille">Taille</label>
             <select id="venteTaille"></select>
           </div>
         </div>
@@ -646,7 +646,7 @@
       <label for="fNom">Nom de l'article</label>
       <input type="text" id="fNom" placeholder="Ex : Robe wax, Chemise slim...">
     </div>
-    <div class="field">
+    <div class="field" id="wrapCouleurUnique">
       <label for="fCouleur">Couleur</label>
       <select id="fCouleur">
         <option value="">Choisir...</option>
@@ -659,15 +659,8 @@
     </div>
 
     <div class="field">
-      <label>Quantités par taille</label>
-      <div style="display:flex; flex-direction:column; gap:8px;">
-        <div class="field-row" style="align-items:center;"><span style="width:90px; color:var(--ink-soft); font-size:0.85rem;">S</span><input type="number" id="fQtyS" min="0" value="0"></div>
-        <div class="field-row" style="align-items:center;"><span style="width:90px; color:var(--ink-soft); font-size:0.85rem;">M</span><input type="number" id="fQtyM" min="0" value="0"></div>
-        <div class="field-row" style="align-items:center;"><span style="width:90px; color:var(--ink-soft); font-size:0.85rem;">L</span><input type="number" id="fQtyL" min="0" value="0"></div>
-        <div class="field-row" style="align-items:center;"><span style="width:90px; color:var(--ink-soft); font-size:0.85rem;">XL</span><input type="number" id="fQtyXL" min="0" value="0"></div>
-        <div class="field-row" style="align-items:center;"><span style="width:90px; color:var(--ink-soft); font-size:0.85rem;">XXL</span><input type="number" id="fQtyXXL" min="0" value="0"></div>
-        <div class="field-row" style="align-items:center;"><span style="width:90px; color:var(--ink-soft); font-size:0.85rem;">Taille unique</span><input type="number" id="fQtyUnique" min="0" value="0"></div>
-      </div>
+      <label id="labelVarianteForm">Quantités par taille</label>
+      <div id="varianteGrid" style="display:grid; grid-template-columns:1fr 1fr; gap:8px 12px;"></div>
     </div>
 
     <div class="field-row">
@@ -853,8 +846,10 @@
         ? '<img src="' + p.photo + '" class="produit-thumb">'
         : '<div class="produit-thumb produit-thumb-empty">' + escapeHtml((p.nom || '?').charAt(0).toUpperCase()) + '</div>';
 
+      var typeVar = p.typeVariante || 'taille';
       var tailles = p.tailles || {};
-      var detailTailles = TAILLES_ORDRE.filter(function (t) { return tailles[t] != null; }).map(function (t) {
+      var ordre = optionsPourType(typeVar);
+      var detailTailles = ordre.filter(function (t) { return tailles[t] != null; }).map(function (t) {
         var v = tailles[t] || 0;
         var cls = v === 0 ? 'style="color:var(--danger); font-weight:700;"' : '';
         return '<span ' + cls + '>' + escapeHtml(t) + ' : ' + v + '</span>';
@@ -864,7 +859,7 @@
         '<div class="row1">' +
           photoHtml +
           '<div style="flex:1; min-width:0;"><div class="nom">' + escapeHtml(p.nom) + '</div>' +
-          '<div class="meta"><span class="cat-tag ' + catTagClass + '">' + escapeHtml(p.categorie) + '</span>' + (p.couleur ? escapeHtml(p.couleur) : '') + '</div></div>' +
+          '<div class="meta"><span class="cat-tag ' + catTagClass + '">' + escapeHtml(p.categorie) + '</span>' + (typeVar !== 'couleur' && p.couleur ? escapeHtml(p.couleur) : '') + '</div></div>' +
           '<div class="qty' + (low ? ' low' : '') + (epuise ? ' epuise' : '') + '">' + (epuise ? 'Épuisé' : total) + '</div>' +
         '</div>' +
         (detailTailles ? '<div class="tailles-detail">' + detailTailles + '</div>' : '') +
@@ -963,13 +958,46 @@
   });
 
   var COULEURS_STANDARD = ['Noir', 'Blanc', 'Bleu', 'Rouge', 'Vert', 'Jaune', 'Rose', 'Gris', 'Beige', 'Marron', 'Orange', 'Violet', 'Multicolore'];
-  var TAILLES_ORDRE = ['S', 'M', 'L', 'XL', 'XXL', 'Taille unique'];
-  var TAILLES_CHAMP_IDS = [['S', 'fQtyS'], ['M', 'fQtyM'], ['L', 'fQtyL'], ['XL', 'fQtyXL'], ['XXL', 'fQtyXXL'], ['Taille unique', 'fQtyUnique']];
+  var TAILLES_VETEMENT = ['S', 'M', 'L', 'XL', 'XXL', 'XXXL', 'Taille unique'];
+  var POINTURES_CHAUSSURE = (function () { var a = []; for (var i = 20; i <= 42; i++) a.push(String(i)); return a; })();
+  var COULEURS_SAC = COULEURS_STANDARD.slice();
 
-  function quantiteTotale(p) {
-    if (!p || !p.tailles) return 0;
-    return Object.keys(p.tailles).reduce(function (s, k) { return s + (p.tailles[k] || 0); }, 0);
+  var LABELS_VARIANTE = { taille: 'Taille', pointure: 'Pointure', couleur: 'Couleur' };
+
+  function detecterTypeArticle(nom) {
+    var n = (nom || '').toLowerCase();
+    if (/chauss|sandale|basket|botte|escarpin|tong|sabot|mocassin/.test(n)) return 'pointure';
+    if (/\bsacs?\b|sacoche|pochette|cabas|besace/.test(n)) return 'couleur';
+    return 'taille';
   }
+
+  function optionsPourType(type) {
+    if (type === 'pointure') return POINTURES_CHAUSSURE;
+    if (type === 'couleur') return COULEURS_SAC;
+    return TAILLES_VETEMENT;
+  }
+
+  function sluggify(s) { return s.replace(/[^a-zA-Z0-9]/g, '_'); }
+
+  var typeVarianteActuel = 'taille';
+
+  function construireGrilleVariante(type, valeursExistantes) {
+    typeVarianteActuel = type;
+    document.getElementById('labelVarianteForm').textContent = 'Quantités par ' + LABELS_VARIANTE[type].toLowerCase();
+    document.getElementById('wrapCouleurUnique').style.display = (type === 'couleur') ? 'none' : 'block';
+    var options = optionsPourType(type);
+    var valeurs = valeursExistantes || {};
+    document.getElementById('varianteGrid').innerHTML = options.map(function (opt) {
+      var val = valeurs[opt] || 0;
+      return '<div class="field-row" style="align-items:center; margin:0;"><span style="width:84px; flex-shrink:0; color:var(--ink-soft); font-size:0.82rem;">' + escapeHtml(opt) + '</span><input type="number" min="0" value="' + val + '" data-variante-key="' + escapeHtml(opt) + '" class="input-variante"></div>';
+    }).join('');
+  }
+
+  document.getElementById('fNom').addEventListener('input', function () {
+    if (state.editingId) return; // on ne change pas le type en cours de modification
+    var type = detecterTypeArticle(this.value);
+    if (type !== typeVarianteActuel) construireGrilleVariante(type, null);
+  });
 
   document.getElementById('fCouleur').addEventListener('change', function () {
     document.getElementById('fCouleurAutre').style.display = (this.value === 'Autre') ? 'block' : 'none';
@@ -990,8 +1018,11 @@
       x.classList.toggle('active', x.getAttribute('data-cat') === currentCat);
     });
 
+    var type = p ? (p.typeVariante || 'taille') : 'taille';
+    construireGrilleVariante(type, p ? p.tailles : null);
+
     var couleurSel = document.getElementById('fCouleur');
-    var couleurVal = p ? (p.couleur || '') : '';
+    var couleurVal = (p && type !== 'couleur') ? (p.couleur || '') : '';
     if (couleurVal && COULEURS_STANDARD.indexOf(couleurVal) === -1) {
       couleurSel.value = 'Autre';
       document.getElementById('fCouleurAutre').style.display = 'block';
@@ -1001,11 +1032,6 @@
       document.getElementById('fCouleurAutre').style.display = 'none';
       document.getElementById('fCouleurAutre').value = '';
     }
-
-    var tailles = (p && p.tailles) || {};
-    TAILLES_CHAMP_IDS.forEach(function (pair) {
-      document.getElementById(pair[1]).value = tailles[pair[0]] || 0;
-    });
 
     document.getElementById('btnSupprimerProduit').style.display = p ? 'block' : 'none';
     sheetProduit.classList.add('open');
@@ -1019,34 +1045,43 @@
   document.getElementById('btnSauverProduit').addEventListener('click', function () {
     var nom = document.getElementById('fNom').value.trim();
     if (!nom) { toast('Donnez un nom à l\'article'); return; }
-    var couleurSel = document.getElementById('fCouleur').value;
-    var couleur = couleurSel === 'Autre' ? document.getElementById('fCouleurAutre').value.trim() : couleurSel;
-    if (!couleur) { toast('Choisissez une couleur'); return; }
+
+    var type = typeVarianteActuel;
+    var couleur = 'Standard';
+    if (type !== 'couleur') {
+      var couleurSel = document.getElementById('fCouleur').value;
+      couleur = couleurSel === 'Autre' ? document.getElementById('fCouleurAutre').value.trim() : couleurSel;
+      if (!couleur) { toast('Choisissez une couleur'); return; }
+    }
     if (!db) { toast('Stockage indisponible'); return; }
 
     var docExistant = state.editingId ? state.produits.find(function (x) { return x.id === state.editingId; }) : null;
     if (!docExistant) {
-      // Fusionne avec un article existant de même nom + couleur, s'il existe déjà
+      // Fusionne avec un article existant de même nom (+ couleur si applicable), s'il existe déjà
       docExistant = state.produits.find(function (x) {
-        return x.nom.trim().toLowerCase() === nom.toLowerCase() && (x.couleur || '').toLowerCase() === couleur.toLowerCase();
+        var memeNom = x.nom.trim().toLowerCase() === nom.toLowerCase();
+        if (type === 'couleur') return memeNom && (x.typeVariante || 'taille') === 'couleur';
+        return memeNom && (x.couleur || '').toLowerCase() === couleur.toLowerCase();
       });
     }
-    var taillesAvant = (docExistant && docExistant.tailles) || {};
+    var variantesAvant = (docExistant && docExistant.tailles) || {};
 
-    var tailles = {};
+    var variantes = {};
     var total = 0;
-    TAILLES_CHAMP_IDS.forEach(function (pair) {
-      var v = Math.max(0, Number(document.getElementById(pair[1]).value) || 0);
+    document.querySelectorAll('#varianteGrid .input-variante').forEach(function (input) {
+      var cle = input.getAttribute('data-variante-key');
+      var v = Math.max(0, Number(input.value) || 0);
       total += v;
-      if (v > 0 || taillesAvant[pair[0]] != null) tailles[pair[0]] = v;
+      if (v > 0 || variantesAvant[cle] != null) variantes[cle] = v;
     });
-    if (total === 0) { toast('Indiquez au moins une quantité pour une taille'); return; }
+    if (total === 0) { toast('Indiquez au moins une quantité'); return; }
 
     var data = {
       nom: nom,
       categorie: currentCat,
       couleur: couleur,
-      tailles: tailles,
+      typeVariante: type,
+      tailles: variantes,
       prixAchat: Number(document.getElementById('fPrixAchat').value) || 0,
       prixVente: Number(document.getElementById('fPrixVente').value) || 0,
       seuilAlerte: Number(document.getElementById('fSeuil').value) || 0,
@@ -1109,6 +1144,10 @@
     }).join('');
     var match = variantes.find(function (p) { return p.id === couleurActuelle; });
     selCouleur.value = match ? match.id : (variantes[0] ? variantes[0].id : '');
+
+    var seulUnDocTypeCouleur = variantes.length === 1 && (variantes[0].typeVariante || 'taille') === 'couleur';
+    document.getElementById('venteCouleurWrap').style.display = seulUnDocTypeCouleur ? 'none' : 'block';
+
     remplirVenteTaille();
   }
 
@@ -1118,7 +1157,10 @@
     var p = state.produits.find(function (x) { return x.id === selCouleur.value; });
     var tailleActuelle = selTaille.value;
     if (!p) { selTaille.innerHTML = ''; onVenteVarianteChange(); return; }
-    var taillesDispo = TAILLES_ORDRE.filter(function (t) { return (p.tailles || {})[t] > 0; });
+    var typeVar = p.typeVariante || 'taille';
+    document.getElementById('labelVenteTaille').textContent = LABELS_VARIANTE[typeVar];
+    var ordre = optionsPourType(typeVar);
+    var taillesDispo = ordre.filter(function (t) { return (p.tailles || {})[t] > 0; });
     selTaille.innerHTML = taillesDispo.map(function (t) {
       return '<option value="' + escapeHtml(t) + '">' + escapeHtml(t) + ' (' + p.tailles[t] + ' en stock)</option>';
     }).join('');
@@ -1195,12 +1237,14 @@
     }
     var resteAPayer = Math.max(0, total - montantPaye);
 
+    var typeVar = p.typeVariante || 'taille';
     var vente = {
       produitId: p.id,
       nom: p.nom,
       categorie: p.categorie,
-      couleur: p.couleur || '',
+      couleur: typeVar === 'couleur' ? taille : (p.couleur || ''),
       taille: taille,
+      typeVariante: typeVar,
       quantite: qte,
       prixUnitaire: prix,
       prixAchatUnitaire: p.prixAchat || 0,
@@ -1240,14 +1284,20 @@
 
     var lignes = [
       ['Référence', reference],
-      ['Article', vente.nom],
-      ['Couleur', vente.couleur || '—'],
-      ['Taille', vente.taille || '—'],
-      ['Catégorie', vente.categorie],
+      ['Article', vente.nom]
+    ];
+    if (vente.typeVariante === 'couleur') {
+      lignes.push(['Couleur', vente.taille || '—']);
+    } else {
+      lignes.push(['Couleur', vente.couleur || '—']);
+      lignes.push([LABELS_VARIANTE[vente.typeVariante || 'taille'] || 'Taille', vente.taille || '—']);
+    }
+    lignes.push(['Catégorie', vente.categorie]);
+    lignes.push.apply(lignes, [
       ['Quantité', String(vente.quantite)],
       ['Prix unitaire', fmt(vente.prixUnitaire)],
       ['Total', fmt(vente.total)]
-    ];
+    ]);
     if (vente.modePaiement === 'credit') {
       lignes.push(['Client', vente.clientNom || '—']);
       lignes.push(['Payé', fmt(vente.montantPaye)]);
@@ -1512,7 +1562,10 @@
       var net = totalVentes - totalDepenses;
 
       var rowsVentes = jourVentes.map(function (v) {
-        var variante = [v.couleur, v.taille ? 'Taille ' + v.taille : ''].filter(Boolean).join(' · ');
+        var motVariante = LABELS_VARIANTE[v.typeVariante || 'taille'] || 'Taille';
+        var variante = v.typeVariante === 'couleur'
+          ? (v.taille ? 'Couleur ' + v.taille : '')
+          : [v.couleur, v.taille ? motVariante + ' ' + v.taille : ''].filter(Boolean).join(' · ');
         return '<div class="mini-row"><div class="who"><span>' + escapeHtml(v.nom) + (variante ? ' · ' + escapeHtml(variante) : '') + '</span><span>' + v.quantite + ' × ' + fmt(v.prixUnitaire) + (v.clientNom ? ' · ' + escapeHtml(v.clientNom) : '') + '</span></div>' +
           '<div style="display:flex; align-items:center; gap:10px;">' +
             '<div class="amt">' + fmt(v.total) + '</div>' +
@@ -1647,10 +1700,14 @@
     var variantesBasses = [];
     state.produits.forEach(function (p) {
       var seuil = p.seuilAlerte != null ? p.seuilAlerte : 2;
+      var typeVar = p.typeVariante || 'taille';
       var tailles = p.tailles || {};
       Object.keys(tailles).forEach(function (t) {
         var v = tailles[t] || 0;
-        var ligne = { nom: p.nom, couleur: p.couleur, categorie: p.categorie, taille: t, qty: v };
+        var libelle = typeVar === 'couleur'
+          ? (escapeHtml(p.nom) + ' · Couleur ' + escapeHtml(t))
+          : (escapeHtml(p.nom) + ' · ' + escapeHtml(p.couleur || '') + ' · ' + LABELS_VARIANTE[typeVar] + ' ' + escapeHtml(t));
+        var ligne = { libelle: libelle, categorie: p.categorie, qty: v };
         if (v === 0) variantesEpuisees.push(ligne);
         else if (v <= seuil) variantesBasses.push(ligne);
       });
@@ -1659,10 +1716,10 @@
 
     var outWrap = document.getElementById('outOfStockWrap');
     outWrap.innerHTML = variantesEpuisees.length ? (
-      '<div style="font-size:0.76rem; color:var(--danger); font-weight:600; margin-bottom:6px;">' + variantesEpuisees.length + ' taille(s) épuisée(s)</div>' +
+      '<div style="font-size:0.76rem; color:var(--danger); font-weight:600; margin-bottom:6px;">' + variantesEpuisees.length + ' variante(s) épuisée(s)</div>' +
       '<div class="mini-list">' + variantesEpuisees.map(function (v) {
         var catTagClass = v.categorie === 'Femme' ? 'femme' : 'homme';
-        return '<div class="mini-row" style="border-color:var(--danger); border-width:1px;"><div class="who"><span>' + escapeHtml(v.nom) + ' · ' + escapeHtml(v.couleur || '') + ' · Taille ' + escapeHtml(v.taille) + '</span><span><span class="cat-tag ' + catTagClass + '">' + escapeHtml(v.categorie) + '</span></span></div><div class="amt" style="color:var(--danger);">Épuisé</div></div>';
+        return '<div class="mini-row" style="border-color:var(--danger); border-width:1px;"><div class="who"><span>' + v.libelle + '</span><span><span class="cat-tag ' + catTagClass + '">' + escapeHtml(v.categorie) + '</span></span></div><div class="amt" style="color:var(--danger);">Épuisé</div></div>';
       }).join('') + '</div>'
     ) : '';
 
@@ -1670,7 +1727,7 @@
     if (variantesBasses.length) {
       lowList.innerHTML = variantesBasses.map(function (v) {
         var catTagClass = v.categorie === 'Femme' ? 'femme' : 'homme';
-        return '<div class="mini-row"><div class="who"><span>' + escapeHtml(v.nom) + ' · ' + escapeHtml(v.couleur || '') + ' · Taille ' + escapeHtml(v.taille) + '</span><span><span class="cat-tag ' + catTagClass + '">' + escapeHtml(v.categorie) + '</span></span></div><div class="amt">' + v.qty + ' restant</div></div>';
+        return '<div class="mini-row"><div class="who"><span>' + v.libelle + '</span><span><span class="cat-tag ' + catTagClass + '">' + escapeHtml(v.categorie) + '</span></span></div><div class="amt">' + v.qty + ' restant</div></div>';
       }).join('');
     } else {
       lowList.innerHTML = variantesEpuisees.length ? '' : '<div class="empty">Tout est bien approvisionné.</div>';
