@@ -17,11 +17,11 @@
 <style>
   :root {
     box-sizing: border-box;
-    --bg: #150B22;
-    --bg-raised: #221233;
-    --ink: #F3E9FA;
-    --ink-soft: #B6A0CC;
-    --line: #3A2350;
+    --bg: #15131A;
+    --bg-raised: #1F1C26;
+    --ink: #ECE8F0;
+    --ink-soft: #978FA6;
+    --line: #2C2833;
     --accent: #D9B24C;
     --accent-ink: #1A0E2E;
     --primary-btn: #D9B24C;
@@ -30,13 +30,16 @@
     --homme: #6F8FCB;
     --chip-ink: #1A0E2E;
     --danger: #E2685A;
-    --danger-bg: #3A1F24;
-    --tab-bg: #1C0F2C;
+    --danger-bg: #322228;
+    --tab-bg: #1C1921;
     --shadow: rgba(0, 0, 0, 0.35);
     --shadow-strong: rgba(0, 0, 0, 0.55);
+    --app-max-width: 640px;
     padding-top: env(safe-area-inset-top, 0px);
     padding-bottom: env(safe-area-inset-bottom, 0px);
   }
+  @media (min-width: 768px) { :root { --app-max-width: 900px; } }
+  @media (min-width: 1100px) { :root { --app-max-width: 1080px; } }
 
   html { scroll-padding-top: env(safe-area-inset-top, 0px); }
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -56,7 +59,7 @@
     letter-spacing: -0.01em;
     margin: 0;
   }
-  #app { display: flex; flex-direction: column; height: 100%; max-width: 640px; margin: 0 auto; }
+  #app { display: flex; flex-direction: column; height: 100%; max-width: var(--app-max-width); margin: 0 auto; transition: max-width 0.2s ease; }
 
   header.top {
     padding: calc(env(safe-area-inset-top, 0px) + 18px) 20px 14px;
@@ -67,7 +70,7 @@
   }
   header.top .name-wrap { flex: 1; min-width: 0; }
   header.top h1 {
-    font-size: 1.5rem;
+    font-size: clamp(1.3rem, 1.05rem + 1vw, 1.85rem);
     line-height: 1.15;
     cursor: text;
     outline: none;
@@ -101,6 +104,15 @@
 
   /* Dashboard */
   .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 14px 0 22px; }
+  @media (min-width: 768px) {
+    .stat-grid { grid-template-columns: repeat(4, 1fr); }
+    .stat-card.wide { grid-column: span 2; }
+    #stockList, #dettesList { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; align-content: start; }
+    #stockList .produit-card, #dettesList .produit-card { margin-bottom: 0; }
+  }
+  @media (min-width: 1100px) {
+    #stockList, #dettesList { grid-template-columns: 1fr 1fr 1fr; }
+  }
   .stat-card {
     background: var(--bg-raised);
     border: 1px solid var(--line);
@@ -236,7 +248,7 @@
 
   .fab {
     position: fixed;
-    right: calc(20px + max(0px, (100vw - 640px) / 2));
+    right: calc(20px + max(0px, (100vw - var(--app-max-width)) / 2));
     bottom: calc(90px + env(safe-area-inset-bottom, 0px));
     width: 54px; height: 54px;
     border-radius: 50%;
@@ -384,7 +396,7 @@
 </head>
 <body>
 <div aria-hidden="true" style="position:fixed; inset:0; z-index:0; display:flex; align-items:center; justify-content:center; overflow:hidden; pointer-events:none;">
-  <img src="logo.png" alt="" style="width:135vw; max-width:900px; opacity:0.05; filter:saturate(1.1);">
+  <img src="logo.png" alt="" style="width:135vw; max-width:900px; opacity:0.035; filter:saturate(0.7);">
 </div>
 <div id="app" style="display:none; position:relative; z-index:1;">
 
@@ -646,21 +658,29 @@
       <label for="fNom">Nom de l'article</label>
       <input type="text" id="fNom" placeholder="Ex : Robe wax, Chemise slim...">
     </div>
-    <div class="field" id="wrapCouleurUnique">
-      <label for="fCouleur">Couleur</label>
-      <select id="fCouleur">
-        <option value="">Choisir...</option>
-        <option>Noir</option><option>Blanc</option><option>Bleu</option><option>Rouge</option>
-        <option>Vert</option><option>Jaune</option><option>Rose</option><option>Gris</option>
-        <option>Beige</option><option>Marron</option><option>Orange</option><option>Violet</option>
-        <option>Multicolore</option><option value="Autre">Autre (préciser)</option>
-      </select>
-      <input type="text" id="fCouleurAutre" placeholder="Préciser la couleur" style="display:none; margin-top:6px;">
+    <!-- Mode SAC : une grille unique où les lignes sont les couleurs -->
+    <div class="field" id="wrapGrilleSac" style="display:none;">
+      <label id="labelVarianteForm">Quantités par couleur</label>
+      <div id="varianteGrid" style="display:grid; grid-template-columns:1fr 1fr; gap:8px 12px;"></div>
     </div>
 
-    <div class="field">
-      <label id="labelVarianteForm">Quantités par taille</label>
-      <div id="varianteGrid" style="display:grid; grid-template-columns:1fr 1fr; gap:8px 12px;"></div>
+    <!-- Mode VETEMENT / CHAUSSURE : plusieurs couleurs, chacune avec sa grille de tailles/pointures -->
+    <div id="wrapMultiCouleur">
+      <div class="field" id="wrapAjoutCouleur">
+        <label>Ajouter une couleur</label>
+        <div style="display:flex; gap:8px;">
+          <select id="selAjoutCouleur" style="flex:1;">
+            <option value="">Choisir...</option>
+            <option>Noir</option><option>Blanc</option><option>Bleu</option><option>Rouge</option>
+            <option>Vert</option><option>Jaune</option><option>Rose</option><option>Gris</option>
+            <option>Beige</option><option>Marron</option><option>Orange</option><option>Violet</option>
+            <option>Multicolore</option><option value="Autre">Autre (préciser)</option>
+          </select>
+          <button type="button" id="btnAjouterCouleur" class="btn primary" style="width:auto; margin-top:0; padding:0 18px; white-space:nowrap;">+ Ajouter</button>
+        </div>
+        <input type="text" id="ajoutCouleurAutre" placeholder="Préciser la couleur" style="display:none; margin-top:6px;">
+      </div>
+      <div id="blocsCouleurs"></div>
     </div>
 
     <div class="field-row">
@@ -964,7 +984,7 @@
 
   var COULEURS_STANDARD = ['Noir', 'Blanc', 'Bleu', 'Rouge', 'Vert', 'Jaune', 'Rose', 'Gris', 'Beige', 'Marron', 'Orange', 'Violet', 'Multicolore'];
   var TAILLES_VETEMENT = ['S', 'M', 'L', 'XL', 'XXL', 'XXXL', 'Taille unique'];
-  var POINTURES_CHAUSSURE = (function () { var a = []; for (var i = 20; i <= 42; i++) a.push(String(i)); return a; })();
+  var POINTURES_CHAUSSURE = (function () { var a = []; for (var i = 20; i <= 45; i++) a.push(String(i)); return a; })();
   var COULEURS_SAC = COULEURS_STANDARD.slice();
 
   var LABELS_VARIANTE = { taille: 'Taille', pointure: 'Pointure', couleur: 'Couleur' };
@@ -1438,7 +1458,7 @@
       list.innerHTML = '<div class="empty">Aucune créance en cours. Tout est payé !</div>';
       return;
     }
-    var entete = '<div class="mini-row" style="margin-bottom:10px; background:var(--danger-bg);"><div class="who"><span>Total à recevoir</span></div><div class="amt" style="color:var(--danger);">' + fmt(totalDettes) + '</div></div>';
+    var entete = '<div class="mini-row" style="margin-bottom:10px; background:var(--danger-bg); grid-column:1/-1;"><div class="who"><span>Total à recevoir</span></div><div class="amt" style="color:var(--danger);">' + fmt(totalDettes) + '</div></div>';
     list.innerHTML = entete + dettes.map(function (v) {
       var dateLabel = new Date(v.date + 'T00:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
       return '<div class="produit-card" data-id="' + v.id + '" style="cursor:pointer;">' +
