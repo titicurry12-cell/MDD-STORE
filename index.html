@@ -233,6 +233,26 @@
     display: flex; flex-wrap: wrap; gap: 4px 8px;
   }
 
+  .bloc-couleur {
+    background: var(--bg);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 12px 14px;
+    margin-bottom: 12px;
+  }
+  .bloc-couleur-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 10px;
+  }
+  .bloc-couleur-header strong { font-size: 0.95rem; }
+  .btn-retirer-couleur {
+    background: var(--danger-bg); color: var(--danger);
+    border: none; border-radius: 999px;
+    width: 26px; height: 26px; font-size: 0.9rem; line-height: 1;
+    cursor: pointer; flex-shrink: 0;
+  }
+  .bloc-couleur-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 12px; }
+
   .cat-tag {
     display: inline-block;
     font-size: 0.68rem;
@@ -988,6 +1008,7 @@
   var COULEURS_SAC = COULEURS_STANDARD.slice();
 
   var LABELS_VARIANTE = { taille: 'Taille', pointure: 'Pointure', couleur: 'Couleur' };
+  var blocCouleurSeq = 0;
 
   function detecterTypeArticle(nom) {
     var n = (nom || '').toLowerCase();
@@ -1002,30 +1023,75 @@
     return TAILLES_VETEMENT;
   }
 
-  function sluggify(s) { return s.replace(/[^a-zA-Z0-9]/g, '_'); }
-
-  var typeVarianteActuel = 'taille';
-
-  function construireGrilleVariante(type, valeursExistantes) {
-    typeVarianteActuel = type;
-    document.getElementById('labelVarianteForm').textContent = 'Quantités par ' + LABELS_VARIANTE[type].toLowerCase();
-    document.getElementById('wrapCouleurUnique').style.display = (type === 'couleur') ? 'none' : 'block';
-    var options = optionsPourType(type);
-    var valeurs = valeursExistantes || {};
-    document.getElementById('varianteGrid').innerHTML = options.map(function (opt) {
+  function genererLignesVariante(type, valeurs) {
+    valeurs = valeurs || {};
+    return optionsPourType(type).map(function (opt) {
       var val = valeurs[opt] || 0;
       return '<div class="field-row" style="align-items:center; margin:0;"><span style="width:84px; flex-shrink:0; color:var(--ink-soft); font-size:0.82rem;">' + escapeHtml(opt) + '</span><input type="number" min="0" value="' + val + '" data-variante-key="' + escapeHtml(opt) + '" class="input-variante"></div>';
     }).join('');
   }
 
+  var typeVarianteActuel = 'taille';
+
+  // ---- Mode SAC (grille unique, lignes = couleurs) ----
+  function construireGrilleSac(valeursExistantes) {
+    document.getElementById('labelVarianteForm').textContent = 'Quantités par couleur';
+    document.getElementById('varianteGrid').innerHTML = genererLignesVariante('couleur', valeursExistantes);
+  }
+
+  // ---- Mode VETEMENT / CHAUSSURE (plusieurs blocs de couleur) ----
+  function ajouterBlocCouleur(couleur, valeurs, retirable) {
+    var id = 'bloc_' + (blocCouleurSeq++);
+    var div = document.createElement('div');
+    div.className = 'bloc-couleur';
+    div.id = id;
+    div.setAttribute('data-couleur', couleur);
+    div.innerHTML =
+      '<div class="bloc-couleur-header"><strong>' + escapeHtml(couleur) + '</strong>' +
+      (retirable ? '<button type="button" class="btn-retirer-couleur">×</button>' : '') +
+      '</div>' +
+      '<div class="bloc-couleur-grid">' + genererLignesVariante(typeVarianteActuel, valeurs) + '</div>';
+    document.getElementById('blocsCouleurs').appendChild(div);
+    if (retirable) {
+      div.querySelector('.btn-retirer-couleur').addEventListener('click', function () { div.remove(); });
+    }
+    return div;
+  }
+
+  function couleursDejaAjoutees() {
+    return Array.prototype.map.call(document.querySelectorAll('#blocsCouleurs .bloc-couleur'), function (b) {
+      return b.getAttribute('data-couleur').toLowerCase();
+    });
+  }
+
+  document.getElementById('btnAjouterCouleur').addEventListener('click', function () {
+    var sel = document.getElementById('selAjoutCouleur').value;
+    var couleur = sel === 'Autre' ? document.getElementById('ajoutCouleurAutre').value.trim() : sel;
+    if (!couleur) { toast('Choisissez une couleur à ajouter'); return; }
+    if (couleursDejaAjoutees().indexOf(couleur.toLowerCase()) !== -1) { toast('Cette couleur est déjà ajoutée'); return; }
+    ajouterBlocCouleur(couleur, null, true);
+    document.getElementById('selAjoutCouleur').value = '';
+    document.getElementById('ajoutCouleurAutre').style.display = 'none';
+    document.getElementById('ajoutCouleurAutre').value = '';
+  });
+
+  document.getElementById('selAjoutCouleur').addEventListener('change', function () {
+    document.getElementById('ajoutCouleurAutre').style.display = (this.value === 'Autre') ? 'block' : 'none';
+  });
+
+  function basculerModeVariante(type) {
+    typeVarianteActuel = type;
+    document.getElementById('wrapGrilleSac').style.display = (type === 'couleur') ? 'block' : 'none';
+    document.getElementById('wrapMultiCouleur').style.display = (type === 'couleur') ? 'none' : 'block';
+  }
+
   document.getElementById('fNom').addEventListener('input', function () {
     if (state.editingId) return; // on ne change pas le type en cours de modification
     var type = detecterTypeArticle(this.value);
-    if (type !== typeVarianteActuel) construireGrilleVariante(type, null);
-  });
-
-  document.getElementById('fCouleur').addEventListener('change', function () {
-    document.getElementById('fCouleurAutre').style.display = (this.value === 'Autre') ? 'block' : 'none';
+    if (type === typeVarianteActuel) return;
+    basculerModeVariante(type);
+    if (type === 'couleur') construireGrilleSac(null);
+    else document.getElementById('blocsCouleurs').innerHTML = '';
   });
 
   function openProduitSheet(id) {
@@ -1044,18 +1110,21 @@
     });
 
     var type = p ? (p.typeVariante || 'taille') : 'taille';
-    construireGrilleVariante(type, p ? p.tailles : null);
+    basculerModeVariante(type);
+    document.getElementById('blocsCouleurs').innerHTML = '';
+    document.getElementById('selAjoutCouleur').value = '';
+    document.getElementById('ajoutCouleurAutre').style.display = 'none';
+    document.getElementById('ajoutCouleurAutre').value = '';
 
-    var couleurSel = document.getElementById('fCouleur');
-    var couleurVal = (p && type !== 'couleur') ? (p.couleur || '') : '';
-    if (couleurVal && COULEURS_STANDARD.indexOf(couleurVal) === -1) {
-      couleurSel.value = 'Autre';
-      document.getElementById('fCouleurAutre').style.display = 'block';
-      document.getElementById('fCouleurAutre').value = couleurVal;
+    if (type === 'couleur') {
+      construireGrilleSac(p ? p.tailles : null);
+    } else if (p) {
+      // Modification : un seul bloc, couleur fixe, non retirable
+      ajouterBlocCouleur(p.couleur || '', p.tailles, false);
+      document.getElementById('wrapAjoutCouleur').style.display = 'none';
     } else {
-      couleurSel.value = couleurVal;
-      document.getElementById('fCouleurAutre').style.display = 'none';
-      document.getElementById('fCouleurAutre').value = '';
+      // Nouvel article : on part d'un premier bloc vide à choisir
+      document.getElementById('wrapAjoutCouleur').style.display = 'block';
     }
 
     document.getElementById('btnSupprimerProduit').style.display = p ? 'block' : 'none';
@@ -1070,53 +1139,76 @@
   document.getElementById('btnSauverProduit').addEventListener('click', function () {
     var nom = document.getElementById('fNom').value.trim();
     if (!nom) { toast('Donnez un nom à l\'article'); return; }
-
-    var type = typeVarianteActuel;
-    var couleur = 'Standard';
-    if (type !== 'couleur') {
-      var couleurSel = document.getElementById('fCouleur').value;
-      couleur = couleurSel === 'Autre' ? document.getElementById('fCouleurAutre').value.trim() : couleurSel;
-      if (!couleur) { toast('Choisissez une couleur'); return; }
-    }
     if (!db) { toast('Stockage indisponible'); return; }
 
-    var docExistant = state.editingId ? state.produits.find(function (x) { return x.id === state.editingId; }) : null;
-    if (!docExistant) {
-      // Fusionne avec un article existant de même nom (+ couleur si applicable), s'il existe déjà
-      docExistant = state.produits.find(function (x) {
-        var memeNom = x.nom.trim().toLowerCase() === nom.toLowerCase();
-        if (type === 'couleur') return memeNom && (x.typeVariante || 'taille') === 'couleur';
-        return memeNom && (x.couleur || '').toLowerCase() === couleur.toLowerCase();
-      });
-    }
-    var variantesAvant = (docExistant && docExistant.tailles) || {};
-
-    var variantes = {};
-    var total = 0;
-    document.querySelectorAll('#varianteGrid .input-variante').forEach(function (input) {
-      var cle = input.getAttribute('data-variante-key');
-      var v = Math.max(0, Number(input.value) || 0);
-      total += v;
-      if (v > 0 || variantesAvant[cle] != null) variantes[cle] = v;
-    });
-    if (total === 0) { toast('Indiquez au moins une quantité'); return; }
-
-    var data = {
+    var type = typeVarianteActuel;
+    var champsCommuns = {
       nom: nom,
       categorie: currentCat,
-      couleur: couleur,
       typeVariante: type,
-      tailles: variantes,
       prixAchat: Number(document.getElementById('fPrixAchat').value) || 0,
       prixVente: Number(document.getElementById('fPrixVente').value) || 0,
       seuilAlerte: Number(document.getElementById('fSeuil').value) || 0,
       photo: photoDataUrl || null
     };
 
-    var cible = docExistant ? docExistant.id : null;
-    var ref = cible ? db.collection('produits').doc(cible) : db.collection('produits').doc();
-    ref.set(data).then(function () {
-      toast('Article enregistré');
+    function lireGrille(container, variantesAvant) {
+      var variantes = {}, total = 0;
+      container.querySelectorAll('.input-variante').forEach(function (input) {
+        var cle = input.getAttribute('data-variante-key');
+        var v = Math.max(0, Number(input.value) || 0);
+        total += v;
+        if (v > 0 || variantesAvant[cle] != null) variantes[cle] = v;
+      });
+      return { variantes: variantes, total: total };
+    }
+
+    if (type === 'couleur') {
+      var docExistant = state.editingId ? state.produits.find(function (x) { return x.id === state.editingId; }) : null;
+      if (!docExistant) {
+        docExistant = state.produits.find(function (x) {
+          return x.nom.trim().toLowerCase() === nom.toLowerCase() && (x.typeVariante || 'taille') === 'couleur';
+        });
+      }
+      var res = lireGrille(document.getElementById('varianteGrid'), (docExistant && docExistant.tailles) || {});
+      if (res.total === 0) { toast('Indiquez au moins une quantité'); return; }
+      var data = Object.assign({}, champsCommuns, { couleur: 'Standard', tailles: res.variantes });
+      var cible = docExistant ? docExistant.id : null;
+      var ref = cible ? db.collection('produits').doc(cible) : db.collection('produits').doc();
+      ref.set(data).then(function () {
+        toast('Article enregistré');
+        closeProduitSheet();
+      }).catch(function () { toast('Erreur : article non enregistré'); });
+      return;
+    }
+
+    // Mode vêtement / chaussure : un ou plusieurs blocs de couleur
+    var blocs = document.querySelectorAll('#blocsCouleurs .bloc-couleur');
+    if (blocs.length === 0) { toast('Ajoutez au moins une couleur'); return; }
+
+    var operations = [];
+    var erreur = null;
+    blocs.forEach(function (bloc) {
+      if (erreur) return;
+      var couleur = bloc.getAttribute('data-couleur');
+      var docExistant = state.editingId ? state.produits.find(function (x) { return x.id === state.editingId; }) : null;
+      if (!docExistant) {
+        docExistant = state.produits.find(function (x) {
+          return x.nom.trim().toLowerCase() === nom.toLowerCase() && (x.couleur || '').toLowerCase() === couleur.toLowerCase();
+        });
+      }
+      var res = lireGrille(bloc, (docExistant && docExistant.tailles) || {});
+      if (res.total === 0) { erreur = 'Indique au moins une quantité pour "' + couleur + '"'; return; }
+      var data = Object.assign({}, champsCommuns, { couleur: couleur, tailles: res.variantes });
+      var cible = docExistant ? docExistant.id : null;
+      var ref = cible ? db.collection('produits').doc(cible) : db.collection('produits').doc();
+      operations.push(ref.set(data));
+    });
+
+    if (erreur) { toast(erreur); return; }
+
+    Promise.all(operations).then(function () {
+      toast(operations.length > 1 ? operations.length + ' couleurs enregistrées' : 'Article enregistré');
       closeProduitSheet();
     }).catch(function () { toast('Erreur : article non enregistré'); });
   });
