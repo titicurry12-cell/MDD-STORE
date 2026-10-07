@@ -232,6 +232,12 @@
     color: var(--ink-soft);
     display: flex; flex-wrap: wrap; gap: 4px 8px;
   }
+  .couleur-detail-ligne {
+    width: 100%;
+    margin-bottom: 4px;
+  }
+  .couleur-detail-ligne strong { color: var(--ink); }
+  .couleur-detail-ligne:last-child { margin-bottom: 0; }
 
   .bloc-couleur {
     background: var(--bg);
@@ -864,8 +870,9 @@
       var matchCat = state.stockFilter === 'Tout' || p.categorie === state.stockFilter;
       if (!matchCat) return false;
       if (!recherche) return true;
-      var taillesTxt = p.tailles ? Object.keys(p.tailles).join(' ') : '';
-      var champs = [p.nom, p.couleur, taillesTxt, p.categorie].join(' ').toLowerCase();
+      var typeVarRecherche = p.typeVariante || 'taille';
+      var clesTxt = p.tailles ? (typeVarRecherche === 'couleur' ? Object.keys(p.tailles).join(' ') : Object.keys(p.tailles).join(' ')) : '';
+      var champs = [p.nom, clesTxt, p.categorie].join(' ').toLowerCase();
       return champs.indexOf(recherche) !== -1;
     }).sort(function (a, b) { return (a.nom || '').localeCompare(b.nom || ''); });
 
@@ -889,17 +896,30 @@
       var typeVar = p.typeVariante || 'taille';
       var tailles = p.tailles || {};
       var ordre = optionsPourType(typeVar);
-      var detailTailles = ordre.filter(function (t) { return tailles[t] != null; }).map(function (t) {
-        var v = tailles[t] || 0;
-        var cls = v === 0 ? 'style="color:var(--danger); font-weight:700;"' : '';
-        return '<span ' + cls + '>' + escapeHtml(t) + ' : ' + v + '</span>';
-      }).join(' <span style="opacity:0.4;">·</span> ');
+      var detailTailles;
+      if (typeVar === 'couleur') {
+        detailTailles = ordre.filter(function (t) { return tailles[t] != null; }).map(function (t) {
+          var v = tailles[t] || 0;
+          var cls = v === 0 ? 'style="color:var(--danger); font-weight:700;"' : '';
+          return '<span ' + cls + '>' + escapeHtml(t) + ' : ' + v + '</span>';
+        }).join(' <span style="opacity:0.4;">·</span> ');
+      } else {
+        detailTailles = Object.keys(tailles).map(function (couleur) {
+          var tv = tailles[couleur] || {};
+          var lignes = ordre.filter(function (t) { return tv[t] != null; }).map(function (t) {
+            var v = tv[t] || 0;
+            var cls = v === 0 ? 'style="color:var(--danger); font-weight:700;"' : '';
+            return '<span ' + cls + '>' + escapeHtml(t) + ' : ' + v + '</span>';
+          }).join(' <span style="opacity:0.4;">·</span> ');
+          return '<div class="couleur-detail-ligne"><strong>' + escapeHtml(couleur) + '</strong> — ' + lignes + '</div>';
+        }).join('');
+      }
 
       return '<div class="produit-card ' + catClass + '" data-id="' + p.id + '">' +
         '<div class="row1">' +
           photoHtml +
           '<div style="flex:1; min-width:0;"><div class="nom">' + escapeHtml(p.nom) + '</div>' +
-          '<div class="meta"><span class="cat-tag ' + catTagClass + '">' + escapeHtml(p.categorie) + '</span>' + (typeVar !== 'couleur' && p.couleur ? escapeHtml(p.couleur) : '') + '</div></div>' +
+          '<div class="meta"><span class="cat-tag ' + catTagClass + '">' + escapeHtml(p.categorie) + '</span></div></div>' +
           '<div class="qty' + (low ? ' low' : '') + (epuise ? ' epuise' : '') + '">' + (epuise ? 'Épuisé' : total) + '</div>' +
         '</div>' +
         (detailTailles ? '<div class="tailles-detail">' + detailTailles + '</div>' : '') +
@@ -999,7 +1019,15 @@
 
   function quantiteTotale(p) {
     if (!p || !p.tailles) return 0;
-    return Object.keys(p.tailles).reduce(function (s, k) { return s + (p.tailles[k] || 0); }, 0);
+    if ((p.typeVariante || 'taille') === 'couleur') {
+      return Object.keys(p.tailles).reduce(function (s, k) { return s + (p.tailles[k] || 0); }, 0);
+    }
+    var total = 0;
+    Object.keys(p.tailles).forEach(function (couleur) {
+      var tv = p.tailles[couleur] || {};
+      Object.keys(tv).forEach(function (t) { total += tv[t] || 0; });
+    });
+    return total;
   }
 
   var COULEURS_STANDARD = ['Noir', 'Blanc', 'Bleu', 'Rouge', 'Vert', 'Jaune', 'Rose', 'Gris', 'Beige', 'Marron', 'Orange', 'Violet', 'Multicolore'];
@@ -1116,15 +1144,14 @@
     document.getElementById('ajoutCouleurAutre').style.display = 'none';
     document.getElementById('ajoutCouleurAutre').value = '';
 
+    document.getElementById('wrapAjoutCouleur').style.display = 'block';
     if (type === 'couleur') {
       construireGrilleSac(p ? p.tailles : null);
-    } else if (p) {
-      // Modification : un seul bloc, couleur fixe, non retirable
-      ajouterBlocCouleur(p.couleur || '', p.tailles, false);
-      document.getElementById('wrapAjoutCouleur').style.display = 'none';
-    } else {
-      // Nouvel article : on part d'un premier bloc vide à choisir
-      document.getElementById('wrapAjoutCouleur').style.display = 'block';
+    } else if (p && p.tailles) {
+      // Modification : on recharge toutes les couleurs existantes de l'article, chacune retirable
+      Object.keys(p.tailles).forEach(function (couleur) {
+        ajouterBlocCouleur(couleur, p.tailles[couleur], true);
+      });
     }
 
     document.getElementById('btnSupprimerProduit').style.display = p ? 'block' : 'none';
@@ -1182,33 +1209,38 @@
       return;
     }
 
-    // Mode vêtement / chaussure : un ou plusieurs blocs de couleur
+    // Mode vêtement / chaussure : un seul document pour tout l'article, avec toutes ses couleurs dedans
     var blocs = document.querySelectorAll('#blocsCouleurs .bloc-couleur');
     if (blocs.length === 0) { toast('Ajoutez au moins une couleur'); return; }
 
-    var operations = [];
+    var estEdition = !!state.editingId;
+    var docExistant = estEdition
+      ? state.produits.find(function (x) { return x.id === state.editingId; })
+      : state.produits.find(function (x) {
+          return x.nom.trim().toLowerCase() === nom.toLowerCase() && (x.typeVariante || 'taille') === type;
+        });
+
+    // En édition, les blocs affichés représentent TOUTE la vérité (une couleur retirée = couleur supprimée).
+    // En création/fusion, on part des couleurs déjà enregistrées et on complète avec les blocs du formulaire.
+    var taillesNouvelles = estEdition ? {} : Object.assign({}, (docExistant && docExistant.tailles) || {});
+
     var erreur = null;
     blocs.forEach(function (bloc) {
       if (erreur) return;
       var couleur = bloc.getAttribute('data-couleur');
-      var docExistant = state.editingId ? state.produits.find(function (x) { return x.id === state.editingId; }) : null;
-      if (!docExistant) {
-        docExistant = state.produits.find(function (x) {
-          return x.nom.trim().toLowerCase() === nom.toLowerCase() && (x.couleur || '').toLowerCase() === couleur.toLowerCase();
-        });
-      }
-      var res = lireGrille(bloc, (docExistant && docExistant.tailles) || {});
+      var avant = (docExistant && docExistant.tailles && docExistant.tailles[couleur]) || {};
+      var res = lireGrille(bloc, avant);
       if (res.total === 0) { erreur = 'Indique au moins une quantité pour "' + couleur + '"'; return; }
-      var data = Object.assign({}, champsCommuns, { couleur: couleur, tailles: res.variantes });
-      var cible = docExistant ? docExistant.id : null;
-      var ref = cible ? db.collection('produits').doc(cible) : db.collection('produits').doc();
-      operations.push(ref.set(data));
+      taillesNouvelles[couleur] = res.variantes;
     });
 
     if (erreur) { toast(erreur); return; }
 
-    Promise.all(operations).then(function () {
-      toast(operations.length > 1 ? operations.length + ' couleurs enregistrées' : 'Article enregistré');
+    var data = Object.assign({}, champsCommuns, { tailles: taillesNouvelles });
+    var cible = docExistant ? docExistant.id : null;
+    var ref = cible ? db.collection('produits').doc(cible) : db.collection('produits').doc();
+    ref.set(data).then(function () {
+      toast('Article enregistré');
       closeProduitSheet();
     }).catch(function () { toast('Erreur : article non enregistré'); });
   });
@@ -1251,43 +1283,50 @@
     remplirVenteCouleur();
   }
 
-  function remplirVenteCouleur() {
+  function venteProduitSelectionne() {
     var nom = document.getElementById('venteNom').value;
+    return produitsDisponibles().find(function (p) { return p.nom === nom; });
+  }
+
+  function remplirVenteCouleur() {
+    var p = venteProduitSelectionne();
     var selCouleur = document.getElementById('venteCouleur');
-    var variantes = produitsDisponibles().filter(function (p) { return p.nom === nom; });
     var couleurActuelle = selCouleur.value;
-    selCouleur.innerHTML = variantes.map(function (p) {
-      return '<option value="' + escapeHtml(p.id) + '">' + escapeHtml(p.couleur || '—') + '</option>';
+    var typeVar = p ? (p.typeVariante || 'taille') : 'taille';
+
+    if (!p || typeVar === 'couleur') {
+      selCouleur.innerHTML = '';
+      document.getElementById('venteCouleurWrap').style.display = 'none';
+      remplirVenteTaille();
+      return;
+    }
+    document.getElementById('venteCouleurWrap').style.display = 'block';
+    var couleurs = Object.keys(p.tailles || {}).filter(function (c) {
+      var tv = p.tailles[c] || {};
+      return Object.keys(tv).some(function (t) { return (tv[t] || 0) > 0; });
+    });
+    selCouleur.innerHTML = couleurs.map(function (c) {
+      return '<option value="' + escapeHtml(c) + '">' + escapeHtml(c) + '</option>';
     }).join('');
-    var match = variantes.find(function (p) { return p.id === couleurActuelle; });
-    selCouleur.value = match ? match.id : (variantes[0] ? variantes[0].id : '');
-
-    var seulUnDocTypeCouleur = variantes.length === 1 && (variantes[0].typeVariante || 'taille') === 'couleur';
-    document.getElementById('venteCouleurWrap').style.display = seulUnDocTypeCouleur ? 'none' : 'block';
-
+    selCouleur.value = couleurs.indexOf(couleurActuelle) !== -1 ? couleurActuelle : (couleurs[0] || '');
     remplirVenteTaille();
   }
 
   function remplirVenteTaille() {
-    var selCouleur = document.getElementById('venteCouleur');
+    var p = venteProduitSelectionne();
     var selTaille = document.getElementById('venteTaille');
-    var p = state.produits.find(function (x) { return x.id === selCouleur.value; });
     var tailleActuelle = selTaille.value;
     if (!p) { selTaille.innerHTML = ''; onVenteVarianteChange(); return; }
     var typeVar = p.typeVariante || 'taille';
     document.getElementById('labelVenteTaille').textContent = LABELS_VARIANTE[typeVar];
     var ordre = optionsPourType(typeVar);
-    var taillesDispo = ordre.filter(function (t) { return (p.tailles || {})[t] > 0; });
-    selTaille.innerHTML = taillesDispo.map(function (t) {
-      return '<option value="' + escapeHtml(t) + '">' + escapeHtml(t) + ' (' + p.tailles[t] + ' en stock)</option>';
+    var tv = typeVar === 'couleur' ? (p.tailles || {}) : ((p.tailles || {})[document.getElementById('venteCouleur').value] || {});
+    var dispo = ordre.filter(function (t) { return (tv[t] || 0) > 0; });
+    selTaille.innerHTML = dispo.map(function (t) {
+      return '<option value="' + escapeHtml(t) + '">' + escapeHtml(t) + ' (' + tv[t] + ' en stock)</option>';
     }).join('');
-    if (taillesDispo.indexOf(tailleActuelle) !== -1) selTaille.value = tailleActuelle;
+    if (dispo.indexOf(tailleActuelle) !== -1) selTaille.value = tailleActuelle;
     onVenteVarianteChange();
-  }
-
-  function venteProduitSelectionne() {
-    var selCouleur = document.getElementById('venteCouleur');
-    return state.produits.find(function (x) { return x.id === selCouleur.value; });
   }
 
   function onVenteVarianteChange() {
@@ -1295,7 +1334,13 @@
     var taille = document.getElementById('venteTaille').value;
     document.getElementById('ventePrix').value = p ? p.prixVente : '';
     var qteInput = document.getElementById('venteQte');
-    if (p && taille) qteInput.max = (p.tailles || {})[taille] || 0;
+    if (p && taille) {
+      var typeVar = p.typeVariante || 'taille';
+      var max;
+      if (typeVar === 'couleur') max = (p.tailles || {})[taille] || 0;
+      else max = (((p.tailles || {})[document.getElementById('venteCouleur').value]) || {})[taille] || 0;
+      qteInput.max = max;
+    }
     updateVenteTotal();
   }
 
@@ -1336,7 +1381,11 @@
     var p = venteProduitSelectionne();
     var taille = document.getElementById('venteTaille').value;
     if (!p || !taille) { toast('Choisissez un article, une couleur et une taille'); return; }
-    var stockTaille = (p.tailles || {})[taille] || 0;
+    var typeVarVente = p.typeVariante || 'taille';
+    var couleurVente = typeVarVente === 'couleur' ? null : document.getElementById('venteCouleur').value;
+    var stockTaille = typeVarVente === 'couleur'
+      ? ((p.tailles || {})[taille] || 0)
+      : (((p.tailles || {})[couleurVente] || {})[taille] || 0);
     var qte = Number(document.getElementById('venteQte').value) || 0;
     var prix = Number(document.getElementById('ventePrix').value) || 0;
     if (qte <= 0) { toast('Quantité invalide'); return; }
@@ -1354,14 +1403,13 @@
     }
     var resteAPayer = Math.max(0, total - montantPaye);
 
-    var typeVar = p.typeVariante || 'taille';
     var vente = {
       produitId: p.id,
       nom: p.nom,
       categorie: p.categorie,
-      couleur: typeVar === 'couleur' ? taille : (p.couleur || ''),
+      couleur: typeVarVente === 'couleur' ? taille : (couleurVente || ''),
       taille: taille,
-      typeVariante: typeVar,
+      typeVariante: typeVarVente,
       quantite: qte,
       prixUnitaire: prix,
       prixAchatUnitaire: p.prixAchat || 0,
@@ -1375,7 +1423,8 @@
     };
 
     var champMAJ = {};
-    champMAJ['tailles.' + taille] = stockTaille - qte;
+    if (typeVarVente === 'couleur') champMAJ['tailles.' + taille] = stockTaille - qte;
+    else champMAJ['tailles.' + couleurVente + '.' + taille] = stockTaille - qte;
 
     db.collection('ventes').add(vente).then(function () {
       return db.collection('produits').doc(p.id).update(champMAJ);
@@ -1819,15 +1868,25 @@
       var seuil = p.seuilAlerte != null ? p.seuilAlerte : 2;
       var typeVar = p.typeVariante || 'taille';
       var tailles = p.tailles || {};
-      Object.keys(tailles).forEach(function (t) {
-        var v = tailles[t] || 0;
-        var libelle = typeVar === 'couleur'
-          ? (escapeHtml(p.nom) + ' · Couleur ' + escapeHtml(t))
-          : (escapeHtml(p.nom) + ' · ' + escapeHtml(p.couleur || '') + ' · ' + LABELS_VARIANTE[typeVar] + ' ' + escapeHtml(t));
-        var ligne = { libelle: libelle, categorie: p.categorie, qty: v };
-        if (v === 0) variantesEpuisees.push(ligne);
-        else if (v <= seuil) variantesBasses.push(ligne);
-      });
+      if (typeVar === 'couleur') {
+        Object.keys(tailles).forEach(function (c) {
+          var v = tailles[c] || 0;
+          var ligne = { libelle: escapeHtml(p.nom) + ' · Couleur ' + escapeHtml(c), categorie: p.categorie, qty: v };
+          if (v === 0) variantesEpuisees.push(ligne);
+          else if (v <= seuil) variantesBasses.push(ligne);
+        });
+      } else {
+        Object.keys(tailles).forEach(function (couleur) {
+          var tv = tailles[couleur] || {};
+          Object.keys(tv).forEach(function (t) {
+            var v = tv[t] || 0;
+            var libelle = escapeHtml(p.nom) + ' · ' + escapeHtml(couleur) + ' · ' + LABELS_VARIANTE[typeVar] + ' ' + escapeHtml(t);
+            var ligne = { libelle: libelle, categorie: p.categorie, qty: v };
+            if (v === 0) variantesEpuisees.push(ligne);
+            else if (v <= seuil) variantesBasses.push(ligne);
+          });
+        });
+      }
     });
     variantesBasses = variantesBasses.slice(0, 6);
 
