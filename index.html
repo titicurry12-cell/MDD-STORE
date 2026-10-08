@@ -243,21 +243,44 @@
     background: var(--bg);
     border: 1px solid var(--line);
     border-radius: 12px;
-    padding: 12px 14px;
-    margin-bottom: 12px;
+    padding: 10px 14px;
+    margin-bottom: 10px;
+    transition: padding 0.15s ease;
   }
   .bloc-couleur-header {
-    display: flex; align-items: center; justify-content: space-between;
-    margin-bottom: 10px;
+    display: flex; align-items: center; gap: 8px;
+    padding: 2px 0;
+    cursor: pointer;
+    user-select: none;
   }
-  .bloc-couleur-header strong { font-size: 0.95rem; }
+  .bloc-couleur-header strong { font-size: 0.95rem; flex-shrink: 0; }
+  .bloc-couleur-chevron {
+    color: var(--ink-soft);
+    font-size: 0.75rem;
+    transition: transform 0.2s ease;
+    flex-shrink: 0;
+  }
+  .bloc-couleur.collapsed .bloc-couleur-chevron { transform: rotate(-90deg); }
+  .bloc-couleur-resume {
+    color: var(--ink-soft);
+    font-size: 0.78rem;
+    flex: 1;
+    text-align: right;
+  }
   .btn-retirer-couleur {
     background: var(--danger-bg); color: var(--danger);
     border: none; border-radius: 999px;
     width: 26px; height: 26px; font-size: 0.9rem; line-height: 1;
     cursor: pointer; flex-shrink: 0;
   }
-  .bloc-couleur-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 12px; }
+  .bloc-couleur-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 2px 12px;
+    margin-top: 10px;
+    max-height: 1000px;
+    overflow: hidden;
+  }
+  .bloc-couleur.collapsed .bloc-couleur-grid { display: none; }
+  .bloc-couleur.collapsed { padding-bottom: 10px; }
 
   .cat-tag {
     display: inline-block;
@@ -358,6 +381,25 @@
     font-size: 0.95rem;
   }
   .field-row { display: flex; gap: 10px; }
+  .ligne-variante {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 8px; padding: 6px 2px;
+  }
+  .ligne-variante span {
+    color: var(--ink-soft); font-size: 0.82rem; flex-shrink: 0;
+  }
+  .input-variante {
+    width: 64px; flex-shrink: 0;
+    padding: 7px 8px;
+    border-radius: 8px;
+    border: 1px solid var(--line);
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Work Sans', sans-serif;
+    font-size: 0.9rem;
+    text-align: center;
+  }
+  .input-variante:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
   .field-row .field { flex: 1; }
   .seg { display: flex; gap: 8px; }
   .seg button {
@@ -1055,7 +1097,7 @@
     valeurs = valeurs || {};
     return optionsPourType(type).map(function (opt) {
       var val = valeurs[opt] || 0;
-      return '<div class="field-row" style="align-items:center; margin:0;"><span style="width:84px; flex-shrink:0; color:var(--ink-soft); font-size:0.82rem;">' + escapeHtml(opt) + '</span><input type="number" min="0" value="' + val + '" data-variante-key="' + escapeHtml(opt) + '" class="input-variante"></div>';
+      return '<div class="ligne-variante"><span>' + escapeHtml(opt) + '</span><input type="number" min="0" value="' + val + '" data-variante-key="' + escapeHtml(opt) + '" class="input-variante"></div>';
     }).join('');
   }
 
@@ -1068,20 +1110,57 @@
   }
 
   // ---- Mode VETEMENT / CHAUSSURE (plusieurs blocs de couleur) ----
-  function ajouterBlocCouleur(couleur, valeurs, retirable) {
+  function totalBloc(div) {
+    var t = 0;
+    div.querySelectorAll('.input-variante').forEach(function (i) { t += Math.max(0, Number(i.value) || 0); });
+    return t;
+  }
+
+  function majResumeBloc(div) {
+    var span = div.querySelector('.bloc-couleur-resume');
+    if (span) span.textContent = totalBloc(div) + ' en stock';
+  }
+
+  function replierAutresBlocs(saufDiv) {
+    document.querySelectorAll('#blocsCouleurs .bloc-couleur').forEach(function (b) {
+      if (b !== saufDiv) b.classList.add('collapsed');
+    });
+  }
+
+  function ajouterBlocCouleur(couleur, valeurs, retirable, autoCollapseAutres) {
+    if (autoCollapseAutres) replierAutresBlocs(null);
     var id = 'bloc_' + (blocCouleurSeq++);
     var div = document.createElement('div');
     div.className = 'bloc-couleur';
     div.id = id;
     div.setAttribute('data-couleur', couleur);
     div.innerHTML =
-      '<div class="bloc-couleur-header"><strong>' + escapeHtml(couleur) + '</strong>' +
-      (retirable ? '<button type="button" class="btn-retirer-couleur">×</button>' : '') +
+      '<div class="bloc-couleur-header">' +
+        '<span class="bloc-couleur-chevron">▾</span>' +
+        '<strong>' + escapeHtml(couleur) + '</strong>' +
+        '<span class="bloc-couleur-resume"></span>' +
+        (retirable ? '<button type="button" class="btn-retirer-couleur">×</button>' : '') +
       '</div>' +
       '<div class="bloc-couleur-grid">' + genererLignesVariante(typeVarianteActuel, valeurs) + '</div>';
     document.getElementById('blocsCouleurs').appendChild(div);
+
+    majResumeBloc(div);
+    div.querySelectorAll('.input-variante').forEach(function (input) {
+      input.addEventListener('input', function () { majResumeBloc(div); });
+    });
+
+    div.querySelector('.bloc-couleur-header').addEventListener('click', function (e) {
+      if (e.target.closest('.btn-retirer-couleur')) return;
+      var etaitReplie = div.classList.contains('collapsed');
+      replierAutresBlocs(div);
+      div.classList.toggle('collapsed', !etaitReplie);
+    });
+
     if (retirable) {
-      div.querySelector('.btn-retirer-couleur').addEventListener('click', function () { div.remove(); });
+      div.querySelector('.btn-retirer-couleur').addEventListener('click', function (e) {
+        e.stopPropagation();
+        div.remove();
+      });
     }
     return div;
   }
@@ -1097,7 +1176,7 @@
     var couleur = sel === 'Autre' ? document.getElementById('ajoutCouleurAutre').value.trim() : sel;
     if (!couleur) { toast('Choisissez une couleur à ajouter'); return; }
     if (couleursDejaAjoutees().indexOf(couleur.toLowerCase()) !== -1) { toast('Cette couleur est déjà ajoutée'); return; }
-    ajouterBlocCouleur(couleur, null, true);
+    ajouterBlocCouleur(couleur, null, true, true);
     document.getElementById('selAjoutCouleur').value = '';
     document.getElementById('ajoutCouleurAutre').style.display = 'none';
     document.getElementById('ajoutCouleurAutre').value = '';
@@ -1150,7 +1229,7 @@
     } else if (p && p.tailles) {
       // Modification : on recharge toutes les couleurs existantes de l'article, chacune retirable
       Object.keys(p.tailles).forEach(function (couleur) {
-        ajouterBlocCouleur(couleur, p.tailles[couleur], true);
+        ajouterBlocCouleur(couleur, p.tailles[couleur], true, true);
       });
     }
 
