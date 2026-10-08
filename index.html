@@ -17,26 +17,47 @@
 <style>
   :root {
     box-sizing: border-box;
-    --bg: #15131A;
-    --bg-raised: #1F1C26;
-    --ink: #ECE8F0;
-    --ink-soft: #978FA6;
-    --line: #2C2833;
-    --accent: #D9B24C;
+    --bg: #FAF8F9;
+    --bg-raised: #FFFFFF;
+    --ink: #211C2B;
+    --ink-soft: #6E6578;
+    --line: #E6E1EA;
+    --accent: #B8872E;
     --accent-ink: #1A0E2E;
-    --primary-btn: #D9B24C;
+    --primary-btn: #B8872E;
     --primary-btn-ink: #1A0E2E;
-    --femme: #D9698F;
-    --homme: #6F8FCB;
-    --chip-ink: #1A0E2E;
-    --danger: #E2685A;
-    --danger-bg: #322228;
-    --tab-bg: #1C1921;
-    --shadow: rgba(0, 0, 0, 0.35);
-    --shadow-strong: rgba(0, 0, 0, 0.55);
+    --femme: #C25277;
+    --homme: #4F6FA8;
+    --chip-ink: #FFFFFF;
+    --danger: #C0392B;
+    --danger-bg: #FBEAE7;
+    --tab-bg: #FFFFFF;
+    --shadow: rgba(33, 28, 43, 0.07);
+    --shadow-strong: rgba(33, 28, 43, 0.16);
     --app-max-width: 640px;
     padding-top: env(safe-area-inset-top, 0px);
     padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #15131A;
+      --bg-raised: #1F1C26;
+      --ink: #ECE8F0;
+      --ink-soft: #978FA6;
+      --line: #2C2833;
+      --accent: #D9B24C;
+      --accent-ink: #1A0E2E;
+      --primary-btn: #D9B24C;
+      --primary-btn-ink: #1A0E2E;
+      --femme: #D9698F;
+      --homme: #6F8FCB;
+      --chip-ink: #1A0E2E;
+      --danger: #E2685A;
+      --danger-bg: #322228;
+      --tab-bg: #1C1921;
+      --shadow: rgba(0, 0, 0, 0.35);
+      --shadow-strong: rgba(0, 0, 0, 0.55);
+    }
   }
   @media (min-width: 768px) { :root { --app-max-width: 900px; } }
   @media (min-width: 1100px) { :root { --app-max-width: 1080px; } }
