@@ -545,6 +545,95 @@
     nav.tabs button { padding-top:6px; padding-bottom:5px; min-height:44px; }
   }
   @supports not (height: 100dvh) { .sheet { max-height:88vh; } }
+
+  /* MDD-Shôp 3.0 — direction artistique luxe, responsive */
+  :root, :root[data-theme="dark"] {
+    --bg:#100C19; --bg-raised:#21192F; --ink:#F9F3EA;
+    --ink-soft:#B7A9C5; --line:#41324F; --accent:#E7BC65;
+    --accent-ink:#201329; --primary-btn:#E7BC65; --primary-btn-ink:#201329;
+    --tab-bg:#171121; --shadow:rgba(0,0,0,.18); --shadow-strong:rgba(0,0,0,.38);
+    --femme:#E18BA9; --homme:#8DB0E8; --chip-ink:#170F23;
+  }
+  :root[data-theme="light"] {
+    --bg:#F7F2F8; --bg-raised:#FFFFFF; --ink:#261A36;
+    --ink-soft:#766985; --line:#E9DFEB; --accent:#B78637;
+    --accent-ink:#26182E; --primary-btn:#B78637; --primary-btn-ink:#FFFFFF;
+    --tab-bg:#FFFFFF; --shadow:rgba(44,20,57,.06); --shadow-strong:rgba(44,20,57,.14);
+  }
+  html,body { background:var(--bg); }
+  body > div[aria-hidden="true"] {display:none!important;}
+  #app { background:radial-gradient(ellipse at 92% 0%,rgba(142,81,167,.14),transparent 45%),var(--bg); }
+  header.top {padding:calc(env(safe-area-inset-top,0px) + 20px) 20px 20px;
+    background:linear-gradient(115deg,#291439 0%,#160D25 70%,#261431 100%);
+    border-bottom:1px solid rgba(231,188,101,.22); position:relative; }
+  header.top::after {content:"";position:absolute;bottom:0;left:20px;right:20px;height:1px;
+    background:linear-gradient(90deg,transparent,#E7BC65,transparent);opacity:.65;}
+  header.top h1 {color:#FDF7EE;font-size:clamp(1.5rem,2.5vw,2.1rem);}
+  header.top .tagline {color:#C9B6CD;font-size:.78rem;}
+  header.top > img {width:52px!important;height:52px!important;border-radius:16px!important;
+    border:1px solid rgba(231,188,101,.4);}
+  .top-icon {background:rgba(255,255,255,.08);color:#F5D69A;border-color:rgba(231,188,101,.25);width:42px;height:42px;border-radius:14px;}
+  header.top #btnDeconnexion {color:#E5D9E9!important;border:1px solid rgba(231,188,101,.22)!important;
+    padding:12px 10px!important;border-radius:13px;font-size:.72rem!important;}
+  main {padding:0 18px calc(100px + env(safe-area-inset-bottom,0px));}
+  .dashboard-heading {display:flex;justify-content:space-between;align-items:center;gap:14px;margin:26px 0 22px;}
+  .dashboard-heading .eyebrow {font-size:.63rem;font-weight:700;letter-spacing:.19em;color:var(--accent);margin-bottom:8px;}
+  .dashboard-heading h2 {font-size:clamp(1.65rem,4vw,2.35rem);line-height:1.05;}
+  .dashboard-heading p {font-size:.8rem;color:var(--ink-soft);margin:7px 0 0;}
+  .sparkle {color:var(--accent);font-size:.65em;vertical-align:top;}
+  .dashboard-seal {flex-shrink:0;width:62px;height:62px;border-radius:50%;border:1px solid rgba(231,188,101,.45);
+    color:var(--accent);display:flex;flex-direction:column;align-items:center;justify-content:center;
+    font-family:Newsreader,serif;font-size:1.2rem;background:radial-gradient(circle,rgba(231,188,101,.13),transparent 72%);}
+  .dashboard-seal span {font-size:.65rem;line-height:.7;}
+  #periodeRow {background:var(--bg-raised);border:1px solid var(--line);padding:5px;border-radius:18px;gap:4px;margin:0 0 16px;}
+  #periodeRow .filter-btn {border:0;background:transparent;border-radius:13px;min-height:43px;padding:9px 6px;font-size:.72rem;}
+  #periodeRow .filter-btn.active {background:var(--accent);color:var(--accent-ink);font-weight:700;box-shadow:0 3px 12px rgba(0,0,0,.12);}
+  .stat-grid {gap:12px;margin:14px 0 22px;}
+  .stat-card {border-radius:20px;padding:18px 17px;min-height:108px;
+    background:linear-gradient(155deg,var(--bg-raised),var(--bg-raised));
+    border:1px solid var(--line);box-shadow:0 8px 24px var(--shadow);}
+  .stat-card .label {font-size:.73rem;letter-spacing:.01em;}
+  .stat-card .value {font-size:clamp(1.3rem,3vw,1.85rem);line-height:1.1;margin-top:11px;}
+  .stat-card.accent {background:linear-gradient(115deg,#C9994D 0%,#F1CF83 58%,#C28E3E 100%);
+    color:#271627;border:1px solid #E8BD68;box-shadow:0 12px 28px rgba(167,112,43,.24);
+    min-height:128px;position:relative;overflow:hidden;}
+  .stat-card.accent::after {content:"✦";position:absolute;right:19px;top:13px;font-size:4.4rem;color:rgba(255,255,255,.23);}
+  .stat-card.accent .label {color:#503721;opacity:1;letter-spacing:.08em;text-transform:uppercase;font-weight:700;font-size:.67rem;}
+  .stat-card.accent .value {font-size:clamp(1.9rem,5vw,2.8rem);position:relative;z-index:1;}
+  .info-note {border-radius:16px;padding:16px 18px;line-height:1.65;border-left:3px solid var(--accent);}
+  section.block h2 {font-size:1.25rem;border-left:0;padding-left:0;margin:0 0 14px;}
+  section.block h2::before {content:"✦";color:var(--accent);font-size:.75rem;margin-right:9px;vertical-align:middle;}
+  .produit-card,.client-card,.mini-row {border-radius:18px;border:1px solid var(--line);box-shadow:0 5px 18px var(--shadow);}
+  .produit-card {padding:17px;margin-bottom:12px;}
+  .produit-card .nom {font-size:1.02rem;}
+  .filter-row:not(#periodeRow) {gap:7px;}
+  .filter-btn {min-height:42px;}
+  .field input,.field select,.field textarea {border-radius:13px;min-height:47px;background:var(--bg-raised);}
+  .btn {min-height:48px;border-radius:14px;}
+  .btn.primary {box-shadow:0 8px 20px rgba(170,116,41,.17);}
+  .sheet {border:1px solid var(--line);border-radius:26px 26px 0 0;}
+  .sheet h3 {font-size:1.55rem;}
+  .fab {background:linear-gradient(140deg,#F2D48E,#C79542);color:#231329;
+    border:2px solid rgba(255,255,255,.28);box-shadow:0 8px 26px rgba(171,119,43,.35);}
+  nav.tabs {background:var(--tab-bg);border-top:1px solid var(--line);
+    padding:8px 8px calc(8px + env(safe-area-inset-bottom,0px));gap:4px;}
+  nav.tabs button {min-width:76px;min-height:66px;flex:1 0 76px;border-radius:14px;
+    padding:8px 5px 7px;gap:4px;font-size:.66rem;white-space:nowrap;}
+  nav.tabs button.active {background:rgba(231,188,101,.13);color:var(--accent);}
+  nav.tabs button .nav-icon {font-family:system-ui,sans-serif;font-size:1.35rem;line-height:1.2;min-height:25px;}
+  nav.tabs button.active .nav-icon {transform:translateY(-1px);}
+  #authScreen > div {background:var(--bg-raised);padding:24px;border-radius:26px;
+    border:1px solid var(--line);box-shadow:0 18px 50px var(--shadow);}
+  @media (max-width:420px) {main {padding-left:13px;padding-right:13px;}
+    header.top {padding-left:13px;padding-right:13px;} .stat-card {padding:15px 13px;min-height:100px;}
+    .stat-card .value {font-size:clamp(1.12rem,5vw,1.5rem);} .dashboard-seal {width:52px;height:52px;}
+    nav.tabs button {min-width:71px;flex-basis:71px;} }
+  @media (min-width:768px) {main {padding-left:32px;padding-right:32px;}
+    .dashboard-heading {margin-top:32px;} .stat-grid {grid-template-columns:repeat(3,minmax(0,1fr));}
+    .stat-card.wide {grid-column:span 2;} nav.tabs {border-radius:20px 20px 0 0;gap:4px;}
+    nav.tabs button {min-width:0;flex:1 1 0;} .sheet {border-radius:26px;}}
+  @media (min-width:1100px) {.stat-grid {grid-template-columns:repeat(4,minmax(0,1fr));}}
+
 </style>
 </head>
 <body>
@@ -566,6 +655,7 @@
 
     <!-- TABLEAU DE BORD -->
     <section class="view active" id="view-dashboard">
+      <div class="dashboard-heading"><div><div class="eyebrow">VOTRE ESPACE DE GESTION</div><h2>Vue d’ensemble <span class="sparkle">✦</span></h2><p>Votre boutique, en un coup d’œil.</p></div><span class="dashboard-seal" aria-hidden="true">MDD<span>✦</span></span></div>
       <div class="filter-row" id="periodeRow">
         <button class="filter-btn active" data-periode="jour">Jour</button>
         <button class="filter-btn" data-periode="semaine">Semaine</button>
@@ -788,14 +878,14 @@
   <button class="fab" id="fabAjouter" title="Ajouter un article">+</button>
 
   <nav class="tabs">
-    <button class="active" data-view="dashboard"><span class="dot"></span>Accueil</button>
-    <button data-view="stock"><span class="dot"></span>Stock</button>
-    <button data-view="vente"><span class="dot"></span>Vente</button>
-    <button data-view="dettes"><span class="dot"></span>Dettes</button>
-    <button data-view="clients"><span class="dot"></span>Clients</button>
-    <button data-view="depenses"><span class="dot"></span>Dépenses</button>
-    <button data-view="historique"><span class="dot"></span>Historique</button>
-    <button data-view="parametres"><span class="dot"></span>Réglages</button>
+    <button class="active" data-view="dashboard"><span class="nav-icon" aria-hidden="true">⌂</span>Accueil</button>
+    <button data-view="stock"><span class="nav-icon" aria-hidden="true">▦</span>Stock</button>
+    <button data-view="vente"><span class="nav-icon" aria-hidden="true">▣</span>Vente</button>
+    <button data-view="dettes"><span class="nav-icon" aria-hidden="true">◷</span>Dettes</button>
+    <button data-view="clients"><span class="nav-icon" aria-hidden="true">♙</span>Clients</button>
+    <button data-view="depenses"><span class="nav-icon" aria-hidden="true">↗</span>Dépenses</button>
+    <button data-view="historique"><span class="nav-icon" aria-hidden="true">◴</span>Historique</button>
+    <button data-view="parametres"><span class="nav-icon" aria-hidden="true">⚙</span>Réglages</button>
   </nav>
 
 </div>
