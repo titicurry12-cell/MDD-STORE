@@ -8,6 +8,7 @@
 <link rel="icon" type="image/png" href="icon-192.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="MDD">
 <meta name="theme-color" content="#150B22">
@@ -481,6 +482,69 @@
   .toast.show { opacity: 1; }
 
   ::selection { background: var(--accent); color: var(--chip-ink); }
+
+  /* MDD 2.0 — finitions, accessibilité et thèmes manuels */
+  :root[data-theme="dark"] { --bg:#15131A;--bg-raised:#211D2A;--ink:#F3EDF7;--ink-soft:#B8ACC4;--line:#40364A;--accent:#E2BC59;--accent-ink:#1A0E2E;--primary-btn:#E2BC59;--primary-btn-ink:#1A0E2E;--danger:#F18C7F;--danger-bg:#38252B;--tab-bg:#201B28;--shadow:rgba(0,0,0,.32);--shadow-strong:rgba(0,0,0,.52); }
+  :root[data-theme="light"] { --bg:#FAF8F9;--bg-raised:#FFFFFF;--ink:#211C2B;--ink-soft:#6E6578;--line:#E6E1EA;--accent:#B8872E;--accent-ink:#1A0E2E;--primary-btn:#B8872E;--primary-btn-ink:#1A0E2E;--danger:#C0392B;--danger-bg:#FBEAE7;--tab-bg:#FFFFFF;--shadow:rgba(33,28,43,.07);--shadow-strong:rgba(33,28,43,.16); }
+  .top-actions { display:flex;gap:5px;align-items:center; }
+  .top-icon { width:36px;height:36px;border:1px solid var(--line);border-radius:11px;background:var(--bg-raised);color:var(--ink);font-size:1.1rem;cursor:pointer; }
+  .section-intro { color:var(--ink-soft);font-size:.84rem;margin:6px 0 16px;line-height:1.55; }
+  .client-card { border:1px solid var(--line);background:var(--bg-raised);border-radius:16px;padding:16px;margin-bottom:10px;box-shadow:0 4px 16px var(--shadow); }
+  .client-card strong {font-size:1rem;} .client-meta {font-size:.78rem;color:var(--ink-soft);margin-top:5px;}
+  .client-totals {display:flex;justify-content:space-between;gap:8px;margin-top:12px;font-size:.84rem;flex-wrap:wrap;}
+  .badge {display:inline-block;background:var(--danger-bg);color:var(--danger);border-radius:30px;padding:3px 8px;font-size:.73rem;}
+  .info-note {background:var(--bg-raised);border:1px solid var(--line);border-left:3px solid var(--accent);padding:12px;border-radius:10px;font-size:.8rem;color:var(--ink-soft);line-height:1.5;}
+  .tabs { overflow-x:auto;scrollbar-width:none; } .tabs::-webkit-scrollbar {display:none;}
+  .tabs button {min-width:64px;} .stat-card .value {overflow-wrap:anywhere;}
+  button:focus-visible,input:focus-visible,select:focus-visible {outline:2px solid var(--accent);outline-offset:2px;}
+  @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important;scroll-behavior:auto!important;}}
+
+  /* MDD 2.1 — iPhone, Android, tablettes et iPad */
+  html, body { width:100%; max-width:100%; overflow-x:hidden; }
+  #app { width:100%; min-width:0; }
+  main, .view, section.block, .field, .mini-row, .produit-card { min-width:0; }
+  img, svg, video { max-width:100%; }
+  canvas { max-width:100%; }
+  .stat-grid > *, .field-row > *, .client-card, .mini-row > * { min-width:0; }
+  .mini-row { gap:10px; }
+  .mini-row .who { min-width:0; overflow-wrap:anywhere; }
+  .mini-row .amt { text-align:right; overflow-wrap:anywhere; }
+  .field input, .field select, .field textarea, .input-variante { font-size:16px; max-width:100%; }
+  input, select, textarea { min-width:0; }
+  nav.tabs { flex-shrink:0; overscroll-behavior-x:contain; -webkit-overflow-scrolling:touch; }
+  nav.tabs button { min-height:52px; flex:1 0 70px; }
+  .sheet { max-height: min(88dvh, 900px); overscroll-behavior:contain; }
+  .filter-row { flex-wrap:wrap; }
+  .filter-row > button { min-width:70px; }
+  @media (max-width: 359px) {
+    main { padding-left:12px; padding-right:12px; }
+    header.top { padding-left:12px; padding-right:12px; }
+    .stat-grid { gap:7px; }
+    .stat-card { padding:11px; }
+    .stat-card .value { font-size:1.22rem; }
+    .field-row { flex-wrap:wrap; }
+    .field-row .field { flex-basis:100%; }
+    .sheet { padding-left:14px; padding-right:14px; }
+  }
+  @media (min-width: 768px) {
+    header.top { padding-left:30px; padding-right:30px; }
+    main { padding-left:30px; padding-right:30px; }
+    nav.tabs { justify-content:center; overflow-x:visible; border:1px solid var(--line); border-radius:18px 18px 0 0; }
+    nav.tabs button { flex:1 1 0; min-width:0; font-size:.78rem; min-height:64px; }
+    .sheet-overlay { align-items:center; padding:24px; }
+    .sheet { border-radius:22px; max-width:680px; max-height:min(88dvh, 900px); padding:28px; }
+    .client-card { display:inline-block; vertical-align:top; width:calc(50% - 8px); margin-right:8px; }
+  }
+  @media (min-width: 1100px) {
+    header.top { padding-left:38px; padding-right:38px; }
+    main { padding-left:38px; padding-right:38px; }
+    .stat-grid { gap:16px; }
+  }
+  @media (orientation:landscape) and (max-height:500px) {
+    .sheet { max-height:92dvh; }
+    nav.tabs button { padding-top:6px; padding-bottom:5px; min-height:44px; }
+  }
+  @supports not (height: 100dvh) { .sheet { max-height:88vh; } }
 </style>
 </head>
 <body>
@@ -495,7 +559,7 @@
       <h1 id="shopName" contenteditable="true" spellcheck="false">MDD-Shôp</h1>
       <div class="tagline" id="dateToday"></div>
     </div>
-    <button type="button" id="btnDeconnexion" class="btn ghost" style="width:auto; padding:6px 10px; font-size:0.72rem; margin-top:0;">Déconnexion</button>
+    <div class="top-actions"><button type="button" class="top-icon" id="btnTheme" title="Changer le thème" aria-label="Changer le thème">◐</button><button type="button" id="btnDeconnexion" class="btn ghost" style="width:auto; padding:6px 10px; font-size:0.72rem; margin-top:0;">Déconnexion</button></div>
   </header>
 
   <main>
@@ -518,6 +582,10 @@
           <div class="value" id="statVentesJour">0 GNF</div>
         </div>
         <div class="stat-card">
+          <div class="label">Encaissements</div>
+          <div class="value" id="statEncaissements">0 GNF</div>
+        </div>
+        <div class="stat-card">
           <div class="label">Dépenses</div>
           <div class="value" id="statDepensesJour">0 GNF</div>
         </div>
@@ -535,6 +603,7 @@
         </div>
       </div>
 
+      <p class="info-note">Bénéfice estimé = marge sur les articles vendus − charges hors achats de marchandises. Les ventes à crédit sont comptées dans les ventes, mais seuls les paiements reçus figurent dans les encaissements.</p>
       <section class="block">
         <h2>Ventes des 7 derniers jours</h2>
         <canvas id="chartVentes7j" height="140" style="width:100%; display:block;"></canvas>
@@ -627,6 +696,14 @@
           </div>
         </div>
 
+        <button type="button" class="btn ghost" id="btnAjouterPanier" style="border:1px solid var(--line);margin-top:12px;">＋ Ajouter cet article au panier</button>
+        <div id="panierSection" style="display:none;margin:14px 0;padding:14px;border:1px solid var(--line);border-radius:14px;background:var(--bg-raised);">
+          <h3 style="margin:0 0 10px;">🛒 Panier <span id="panierNombre"></span></h3>
+          <div id="panierListe"></div>
+          <div class="total-line"><span>Total du panier</span><strong id="panierTotal">0 GNF</strong></div>
+          <button type="button" class="btn ghost" id="btnViderPanier" style="margin-top:8px;">Vider le panier</button>
+        </div>
+        <div class="field"><label for="venteClientLibre">Nom du client (facultatif hors crédit)</label><input id="venteClientLibre" maxlength="100" placeholder="Pour retrouver ses achats"></div>
         <button class="btn primary" id="btnEnregistrerVente">Enregistrer la vente</button>
 
         <div id="recuApresVente" style="display:none; margin-top:14px; padding:14px; border-radius:12px; background:var(--bg-raised); border:1px solid var(--line); box-shadow:0 1px 3px var(--shadow);">
@@ -641,6 +718,30 @@
       <section class="block">
         <h2>Créances en cours</h2>
         <div id="dettesList"></div>
+      </section>
+    </section>
+
+    <!-- CLIENTS : synthèse calculée à partir des ventes, sans migration -->
+    <section class="view" id="view-clients">
+      <section class="block">
+        <h2>Répertoire clients</h2>
+        <p class="section-intro">Retrouve les clients associés aux ventes et aux crédits. Les ventes sans nom de client ne sont pas attribuées.</p>
+        <div class="field"><input type="search" id="clientSearch" placeholder="Rechercher un client..."></div>
+        <div id="clientsList"></div>
+      </section>
+    </section>
+
+    <!-- PARAMETRES -->
+    <section class="view" id="view-parametres">
+      <section class="block">
+        <h2>Ma boutique</h2>
+        <div class="field"><label for="paramNom">Nom de la boutique</label><input id="paramNom" maxlength="70" placeholder="MDD-Shôp"></div>
+        <div class="field"><label for="paramTelephone">Téléphone</label><input id="paramTelephone" type="tel" maxlength="35" placeholder="+224 ..."></div>
+        <div class="field"><label for="paramAdresse">Adresse</label><input id="paramAdresse" maxlength="160" placeholder="Conakry, Guinée"></div>
+        <button class="btn primary" id="btnSauverParametres">Enregistrer les paramètres</button>
+        <h2 style="margin-top:24px">Apparence</h2>
+        <div class="field"><label for="themeSelect">Thème</label><select id="themeSelect"><option value="auto">Automatique (téléphone)</option><option value="light">Clair</option><option value="dark">Sombre</option></select></div>
+        <p class="info-note">Les paramètres de la boutique sont synchronisés avec ton compte Firebase. Le thème est mémorisé sur ce téléphone.</p>
       </section>
     </section>
 
@@ -691,8 +792,10 @@
     <button data-view="stock"><span class="dot"></span>Stock</button>
     <button data-view="vente"><span class="dot"></span>Vente</button>
     <button data-view="dettes"><span class="dot"></span>Dettes</button>
+    <button data-view="clients"><span class="dot"></span>Clients</button>
     <button data-view="depenses"><span class="dot"></span>Dépenses</button>
     <button data-view="historique"><span class="dot"></span>Historique</button>
+    <button data-view="parametres"><span class="dot"></span>Réglages</button>
   </nav>
 
 </div>
@@ -903,7 +1006,7 @@
   document.getElementById('dateToday').textContent = new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
 
   // ---------- NAV ----------
-  var views = ['dashboard', 'stock', 'vente', 'dettes', 'depenses', 'historique'];
+  var views = ['dashboard', 'stock', 'vente', 'dettes', 'clients', 'depenses', 'historique', 'parametres'];
   var fabBtn = document.getElementById('fabAjouter');
   document.querySelectorAll('nav.tabs button').forEach(function (btn) {
     btn.addEventListener('click', function () {
@@ -934,7 +1037,7 @@
       if (!matchCat) return false;
       if (!recherche) return true;
       var typeVarRecherche = p.typeVariante || 'taille';
-      var clesTxt = p.tailles ? (typeVarRecherche === 'couleur' ? Object.keys(p.tailles).join(' ') : Object.keys(p.tailles).join(' ')) : '';
+      var clesTxt = p.tailles ? Object.keys(p.tailles).map(function (c) { return c + ' ' + (typeVarRecherche === 'couleur' ? '' : Object.keys(p.tailles[c] || {}).join(' ')); }).join(' ') : '';
       var champs = [p.nom, clesTxt, p.categorie].join(' ').toLowerCase();
       return champs.indexOf(recherche) !== -1;
     }).sort(function (a, b) { return (a.nom || '').localeCompare(b.nom || ''); });
@@ -997,10 +1100,10 @@
     });
   }
 
-  document.querySelectorAll('.filter-btn').forEach(function (btn) {
+  document.querySelectorAll('.filter-btn[data-filter]').forEach(function (btn) {
     btn.addEventListener('click', function () {
       state.stockFilter = btn.getAttribute('data-filter');
-      document.querySelectorAll('.filter-btn').forEach(function (b) { b.classList.toggle('active', b === btn); });
+      document.querySelectorAll('.filter-btn[data-filter]').forEach(function (b) { b.classList.toggle('active', b === btn); });
       renderStock();
     });
   });
@@ -1363,13 +1466,8 @@
 
   function fillVenteSelect() {
     var selNom = document.getElementById('venteNom');
-    var noms = [];
-    produitsDisponibles().forEach(function (p) {
-      if (noms.indexOf(p.nom) === -1) noms.push(p.nom);
-    });
-    noms.sort(function (a, b) { return a.localeCompare(b); });
-
-    if (noms.length === 0) {
+    var disponibles = produitsDisponibles().slice().sort(function (a, b) { return (a.nom || '').localeCompare(b.nom || ''); });
+    if (!disponibles.length) {
       selNom.innerHTML = '<option value="">Aucun article disponible</option>';
       document.getElementById('venteCouleur').innerHTML = '';
       document.getElementById('venteTaille').innerHTML = '';
@@ -1377,15 +1475,15 @@
       updateVenteTotal();
       return;
     }
-    var nomActuel = noms.indexOf(selNom.value) !== -1 ? selNom.value : noms[0];
-    selNom.innerHTML = noms.map(function (n) { return '<option value="' + escapeHtml(n) + '">' + escapeHtml(n) + '</option>'; }).join('');
-    selNom.value = nomActuel;
+    var idActuel = disponibles.some(function (p) { return p.id === selNom.value; }) ? selNom.value : disponibles[0].id;
+    selNom.innerHTML = disponibles.map(function (p) { return '<option value="' + escapeHtml(p.id) + '">' + escapeHtml(p.nom) + ' · ' + escapeHtml(p.categorie || '') + '</option>'; }).join('');
+    selNom.value = idActuel;
     remplirVenteCouleur();
   }
 
   function venteProduitSelectionne() {
-    var nom = document.getElementById('venteNom').value;
-    return produitsDisponibles().find(function (p) { return p.nom === nom; });
+    var id = document.getElementById('venteNom').value;
+    return produitsDisponibles().find(function (p) { return p.id === id; });
   }
 
   function remplirVenteCouleur() {
@@ -1459,7 +1557,7 @@
   function updateCreditReste() {
     var qte = Number(document.getElementById('venteQte').value) || 0;
     var prix = Number(document.getElementById('ventePrix').value) || 0;
-    var total = qte * prix;
+    var total = panier.length ? totalPanier() : qte * prix;
     var paye = Number(document.getElementById('creditMontantPaye').value) || 0;
     var reste = Math.max(0, total - paye);
     document.getElementById('creditReste').textContent = fmt(reste);
@@ -1476,69 +1574,109 @@
   document.getElementById('ventePrix').addEventListener('input', updateVenteTotal);
 
   var derniereVente = null;
+  var panier = [];
+  var venteEnCours = false;
 
-  document.getElementById('btnEnregistrerVente').addEventListener('click', function () {
+  function ligneSelectionnee() {
     var p = venteProduitSelectionne();
     var taille = document.getElementById('venteTaille').value;
-    if (!p || !taille) { toast('Choisissez un article, une couleur et une taille'); return; }
-    var typeVarVente = p.typeVariante || 'taille';
-    var couleurVente = typeVarVente === 'couleur' ? null : document.getElementById('venteCouleur').value;
-    var stockTaille = typeVarVente === 'couleur'
-      ? ((p.tailles || {})[taille] || 0)
-      : (((p.tailles || {})[couleurVente] || {})[taille] || 0);
-    var qte = Number(document.getElementById('venteQte').value) || 0;
-    var prix = Number(document.getElementById('ventePrix').value) || 0;
-    if (qte <= 0) { toast('Quantité invalide'); return; }
-    if (qte > stockTaille) { toast('Stock insuffisant (' + stockTaille + ' restant en taille ' + taille + ')'); return; }
-    if (!db) { toast('Stockage indisponible'); return; }
+    if (!p || !taille) throw new Error('Choisissez un article et sa variante');
+    var type = p.typeVariante || 'taille';
+    var couleur = type === 'couleur' ? '' : document.getElementById('venteCouleur').value;
+    var qte = Number(document.getElementById('venteQte').value);
+    var prix = Number(document.getElementById('ventePrix').value);
+    if (!Number.isSafeInteger(qte) || qte <= 0) throw new Error('Quantité invalide : entrez un entier positif');
+    if (!Number.isFinite(prix) || prix < 0) throw new Error('Prix invalide');
+    var disponible = type === 'couleur' ? Number((p.tailles || {})[taille] || 0) : Number(((p.tailles || {})[couleur] || {})[taille] || 0);
+    var deja = panier.filter(function (l) { return l.produitId === p.id && l.taille === taille && l.couleur === couleur; }).reduce(function (n, l) { return n + l.quantite; }, 0);
+    if (qte + deja > disponible) throw new Error('Stock insuffisant : ' + Math.max(0, disponible - deja) + ' restant(s)');
+    return { produitId:p.id, nom:p.nom, categorie:p.categorie || '', typeVariante:type, couleur:couleur, taille:taille, quantite:qte, prixUnitaire:prix, prixAchatUnitaire:Number(p.prixAchat || 0), total:qte*prix };
+  }
 
-    var total = qte * prix;
+  function renderPanier() {
+    var section = document.getElementById('panierSection');
+    section.style.display = panier.length ? 'block' : 'none';
+    document.getElementById('panierNombre').textContent = '(' + panier.length + ')';
+    document.getElementById('panierListe').innerHTML = panier.map(function (l, i) {
+      return '<div class="mini-row" style="align-items:center;gap:8px;"><div class="who"><span>' + escapeHtml(l.nom) + ' · ' + escapeHtml(l.couleur ? l.couleur + ' / ' + l.taille : l.taille) + '</span><span>' + l.quantite + ' × ' + fmt(l.prixUnitaire) + '</span></div><strong>' + fmt(l.total) + '</strong><button type="button" data-retirer="' + i + '" aria-label="Retirer du panier" style="padding:8px;border:1px solid var(--line);border-radius:8px;background:transparent;color:var(--danger);">✕</button></div>';
+    }).join('');
+    document.getElementById('panierTotal').textContent = fmt(totalPanier());
+    document.getElementById('btnEnregistrerVente').textContent = panier.length ? 'Encaisser le panier (' + panier.length + ')' : 'Enregistrer la vente';
+    updateCreditReste();
+  }
+  function totalPanier() { return panier.reduce(function (n, l) { return n + l.total; }, 0); }
+  document.getElementById('btnAjouterPanier').addEventListener('click', function () {
+    try { panier.push(ligneSelectionnee()); renderPanier(); toast('Article ajouté au panier'); }
+    catch (e) { toast(e.message); }
+  });
+  document.getElementById('panierListe').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-retirer]');
+    if (b) { panier.splice(Number(b.dataset.retirer), 1); renderPanier(); }
+  });
+  document.getElementById('btnViderPanier').addEventListener('click', function () { panier = []; renderPanier(); });
+
+  document.getElementById('btnEnregistrerVente').addEventListener('click', function () {
+    if (venteEnCours) return;
+    var lignes;
+    try { lignes = panier.length ? panier.slice() : [ligneSelectionnee()]; }
+    catch (e) { toast(e.message); return; }
+    if (!db || !firestore) { toast('Stockage indisponible'); return; }
+    var total = lignes.reduce(function (n, l) { return n + l.total; }, 0);
     var aCredit = document.getElementById('venteACredit').checked;
     var clientNom = document.getElementById('creditClientNom').value.trim();
-    var montantPaye = total;
+    var paye = total;
     if (aCredit) {
-      if (!clientNom) { toast('Indique le nom du client pour une vente à crédit'); return; }
-      montantPaye = Number(document.getElementById('creditMontantPaye').value) || 0;
-      if (montantPaye > total) { toast('Le montant payé dépasse le total'); return; }
+      if (!clientNom) { toast('Indiquez le nom du client'); return; }
+      paye = Number(document.getElementById('creditMontantPaye').value);
+      if (!Number.isFinite(paye) || paye < 0 || paye > total) { toast('Montant payé invalide'); return; }
     }
-    var resteAPayer = Math.max(0, total - montantPaye);
-
+    var premiere = lignes[0];
     var vente = {
-      produitId: p.id,
-      nom: p.nom,
-      categorie: p.categorie,
-      couleur: typeVarVente === 'couleur' ? taille : (couleurVente || ''),
-      taille: taille,
-      typeVariante: typeVarVente,
-      quantite: qte,
-      prixUnitaire: prix,
-      prixAchatUnitaire: p.prixAchat || 0,
-      total: total,
-      modePaiement: aCredit ? 'credit' : 'complet',
-      clientNom: aCredit ? clientNom : '',
-      montantPaye: montantPaye,
-      resteAPayer: resteAPayer,
-      date: todayStr(),
-      timestamp: Date.now()
+      produitId:premiere.produitId, nom:lignes.length === 1 ? premiere.nom : lignes.length + ' articles',
+      categorie:premiere.categorie, couleur:premiere.couleur, taille:premiere.taille,
+      typeVariante:premiere.typeVariante,
+      quantite:lignes.reduce(function (n,l) { return n+l.quantite; },0),
+      prixUnitaire:lignes.length === 1 ? premiere.prixUnitaire : total,
+      prixAchatUnitaire:lignes.length === 1 ? premiere.prixAchatUnitaire : 0,
+      articles:lignes, total:total, modePaiement:aCredit ? 'credit' : 'complet',
+      clientNom:aCredit ? clientNom : document.getElementById('venteClientLibre').value.trim(), montantPaye:paye, montantInitialPaye:paye, resteAPayer:total-paye,
+      date:todayStr(), timestamp:Date.now()
     };
-
-    var champMAJ = {};
-    if (typeVarVente === 'couleur') champMAJ['tailles.' + taille] = stockTaille - qte;
-    else champMAJ['tailles.' + couleurVente + '.' + taille] = stockTaille - qte;
-
-    db.collection('ventes').add(vente).then(function () {
-      return db.collection('produits').doc(p.id).update(champMAJ);
-    }).then(function () {
-      toast('Vente enregistrée');
-      derniereVente = Object.assign({}, vente);
+    var bouton = document.getElementById('btnEnregistrerVente');
+    venteEnCours = true; bouton.disabled = true;
+    var ids = Array.from(new Set(lignes.map(function(l){return l.produitId;}))).sort();
+    var refs = ids.map(function(id){return db.collection('produits').doc(id);});
+    var venteRef = db.collection('ventes').doc();
+    firestore.runTransaction(function(tx) {
+      return Promise.all(refs.map(function(ref){return tx.get(ref);})).then(function(snaps){
+        var modifs = {};
+        snaps.forEach(function(snap){
+          if (!snap.exists) throw new Error('Un article a été supprimé');
+          modifs[snap.id] = JSON.parse(JSON.stringify(snap.data().tailles || {}));
+        });
+        lignes.forEach(function(l){
+          var variantes = modifs[l.produitId];
+          var actuel = l.typeVariante === 'couleur' ? Number(variantes[l.taille] || 0) : Number((variantes[l.couleur] || {})[l.taille] || 0);
+          if (actuel < l.quantite) throw new Error('Stock insuffisant pour ' + l.nom + ' (' + l.taille + ')');
+          if (l.typeVariante === 'couleur') variantes[l.taille] = actuel-l.quantite;
+          else variantes[l.couleur][l.taille] = actuel-l.quantite;
+        });
+        refs.forEach(function(ref){tx.update(ref, {tailles:modifs[ref.id]});});
+        tx.set(venteRef, vente);
+      });
+    }).then(function(){
+      toast('Vente enregistrée'); derniereVente = vente;
+      panier = []; renderPanier();
       document.getElementById('recuApresVente').style.display = 'block';
       document.getElementById('venteQte').value = 1;
       document.getElementById('venteACredit').checked = false;
       document.getElementById('creditFields').style.display = 'none';
       document.getElementById('creditClientNom').value = '';
+      document.getElementById('venteClientLibre').value = '';
       document.getElementById('creditMontantPaye').value = 0;
       fillVenteSelect();
-    }).catch(function () { toast('Erreur lors de la vente'); });
+    }).catch(function(e){toast(e.message || 'Erreur lors de la vente');})
+      .finally(function(){venteEnCours = false; bouton.disabled = false;});
   });
 
   function genererImageRecu(vente) {
@@ -1552,16 +1690,21 @@
       ['Référence', reference],
       ['Article', vente.nom]
     ];
-    if (vente.typeVariante === 'couleur') {
+    if (vente.articles && vente.articles.length > 1) {
+      vente.articles.forEach(function (a, i) { lignes.push(['Article ' + (i + 1), a.nom + ' · ' + (a.couleur ? a.couleur + '/' : '') + a.taille + ' · ' + a.quantite + ' × ' + fmt(a.prixUnitaire)]); });
+    }
+    if (vente.articles && vente.articles.length > 1) {
+      // Les variantes sont déjà détaillées dans les lignes du panier.
+    } else if (vente.typeVariante === 'couleur') {
       lignes.push(['Couleur', vente.taille || '—']);
     } else {
       lignes.push(['Couleur', vente.couleur || '—']);
       lignes.push([LABELS_VARIANTE[vente.typeVariante || 'taille'] || 'Taille', vente.taille || '—']);
     }
-    lignes.push(['Catégorie', vente.categorie]);
+    if (!vente.articles || vente.articles.length === 1) lignes.push(['Catégorie', vente.categorie]);
     lignes.push.apply(lignes, [
       ['Quantité', String(vente.quantite)],
-      ['Prix unitaire', fmt(vente.prixUnitaire)],
+      ['Prix unitaire', vente.articles && vente.articles.length > 1 ? 'Voir les articles' : fmt(vente.prixUnitaire)],
       ['Total', fmt(vente.total)]
     ]);
     if (vente.modePaiement === 'credit') {
@@ -1736,13 +1879,27 @@
     if (!v) return;
     var montant = Number(document.getElementById('paiementMontant').value) || 0;
     if (montant <= 0) { toast('Montant invalide'); return; }
-    var nouveauPaye = (v.montantPaye || 0) + montant;
-    var nouveauReste = Math.max(0, v.total - nouveauPaye);
-    db.collection('ventes').doc(v.id).update({ montantPaye: nouveauPaye, resteAPayer: nouveauReste }).then(function () {
+    if (!Number.isFinite(montant) || montant > Number(v.resteAPayer || 0)) { toast('Le paiement dépasse le solde restant'); return; }
+    var boutonPaiement = document.getElementById('btnEncaisser');
+    boutonPaiement.disabled = true;
+    var nouveauReste;
+    firestore.runTransaction(function (transaction) {
+      var ref = db.collection('ventes').doc(v.id);
+      return transaction.get(ref).then(function (snap) {
+        if (!snap.exists) throw new Error('Vente introuvable');
+        var actuel = snap.data();
+        var solde = Number(actuel.resteAPayer || 0);
+        if (montant > solde || montant <= 0) throw new Error('Paiement supérieur au solde');
+        nouveauReste = solde - montant;
+        var paiements = Array.isArray(actuel.historiquePaiements) ? actuel.historiquePaiements.slice() : [];
+        paiements.push({ montant: montant, date: new Date().toISOString() });
+        transaction.update(ref, { montantPaye: Number(actuel.montantPaye || 0) + montant, resteAPayer: nouveauReste, historiquePaiements: paiements });
+      });
+    }).then(function () {
       toast(nouveauReste === 0 ? 'Dette soldée' : 'Paiement enregistré');
       document.getElementById('sheetPaiement').classList.remove('open');
       paiementVenteId = null;
-    }).catch(function () { toast('Erreur lors de l\'encaissement'); });
+    }).catch(function (err) { toast(err && err.message ? err.message : 'Erreur lors de l\'encaissement'); }).finally(function () { boutonPaiement.disabled = false; });
   });
 
   // ---------- DEPENSES ----------
@@ -1940,13 +2097,17 @@
     var depensesP = state.depenses.filter(function (d) { return dansPeriode(d.date); });
     var totalVentesP = ventesP.reduce(function (s, v) { return s + (v.total || 0); }, 0);
     var totalDepensesP = depensesP.reduce(function (s, d) { return s + (d.montant || 0); }, 0);
-    var beneficeBrutP = ventesP.reduce(function (s, v) { return s + ((v.prixUnitaire - (v.prixAchatUnitaire || 0)) * v.quantite); }, 0);
-    var beneficeNetP = beneficeBrutP - totalDepensesP;
+    var beneficeBrutP = ventesP.reduce(function (s, v) { return s + (v.articles ? v.articles.reduce(function (n, a) { return n + (a.prixUnitaire - (a.prixAchatUnitaire || 0)) * a.quantite; }, 0) : (v.prixUnitaire - (v.prixAchatUnitaire || 0)) * v.quantite); }, 0);
+    var chargesP = depensesP.filter(function(d){return d.categorie !== 'Marchandise';}).reduce(function(n,d){return n+Number(d.montant||0);},0);
+    var beneficeNetP = beneficeBrutP - chargesP;
+    var encaissementsP = ventesP.reduce(function(n,v){return n+Number(v.modePaiement === 'credit' ? (v.montantInitialPaye != null ? v.montantInitialPaye : Math.max(0,Number(v.montantPaye||0)-(v.historiquePaiements||[]).reduce(function(n,pa){return n+Number(pa.montant||0);},0))) : v.total||0);},0);
+    state.ventes.forEach(function(v){(v.historiquePaiements||[]).forEach(function(pa){if(pa.date && dansPeriode(String(pa.date).slice(0,10)))encaissementsP+=Number(pa.montant||0);});});
     var totalArticles = state.produits.reduce(function (s, p) { return s + quantiteTotale(p); }, 0);
     var valeurStock = state.produits.reduce(function (s, p) { return s + quantiteTotale(p) * (p.prixVente || 0); }, 0);
 
     setStatAnimated('statVentesJour', totalVentesP);
     setStatAnimated('statDepensesJour', totalDepensesP);
+    setStatAnimated('statEncaissements', encaissementsP);
     setStatAnimated('statBeneficeNetJour', beneficeNetP);
     document.getElementById('statArticles').textContent = totalArticles;
     setStatAnimated('statValeurStock', valeurStock);
@@ -2022,6 +2183,7 @@
     renderDettes();
     renderDepenses();
     renderHistorique();
+    renderClients();
     if (document.getElementById('view-vente').classList.contains('active')) fillVenteSelect();
   }
 
@@ -2194,6 +2356,47 @@
     });
   });
 
+  // ---------- CLIENTS / PARAMETRES / THEME ----------
+  function renderClients() {
+    var map = new Map();
+    state.ventes.forEach(function(v) {
+      var nom = String(v.clientNom || '').trim();
+      if (!nom) return;
+      var cle = nom.toLocaleLowerCase('fr');
+      if (!map.has(cle)) map.set(cle,{nom:nom, achats:0, total:0, dette:0, dernier:0});
+      var c=map.get(cle);
+      c.achats++;c.total+=Number(v.total||0);c.dette+=Number(v.resteAPayer||0);
+      c.dernier=Math.max(c.dernier,Number(v.timestamp||0));
+    });
+    var terme=document.getElementById('clientSearch').value.trim().toLocaleLowerCase('fr');
+    var clients=Array.from(map.values()).filter(function(c){return c.nom.toLocaleLowerCase('fr').includes(terme);}).sort(function(a,b){return b.dernier-a.dernier;});
+    document.getElementById('clientsList').innerHTML=clients.length?clients.map(function(c){
+      return '<div class="client-card"><strong>'+escapeHtml(c.nom)+'</strong>'+(c.dette>0?' <span class="badge">Crédit en cours</span>':'')+
+      '<div class="client-meta">'+c.achats+' achat(s) · Dernier : '+(c.dernier?new Date(c.dernier).toLocaleDateString('fr-FR'):'—')+'</div>'+
+      '<div class="client-totals"><span>Total : <strong>'+fmt(c.total)+'</strong></span><span>À recevoir : <strong>'+fmt(c.dette)+'</strong></span></div></div>';
+    }).join(''):'<p class="empty">Aucun client trouvé. Ajoute un nom lors de la vente pour constituer ton répertoire.</p>';
+  }
+  document.getElementById('clientSearch').addEventListener('input',renderClients);
+  document.getElementById('btnSauverParametres').addEventListener('click',function(){
+    if(!db){toast('Connecte-toi d’abord');return;}
+    var nom=document.getElementById('paramNom').value.trim();
+    if(!nom){toast('Indique le nom de la boutique');return;}
+    db.doc('reglages/boutique').set({nom:nom,telephone:document.getElementById('paramTelephone').value.trim(),adresse:document.getElementById('paramAdresse').value.trim()},{merge:true}).then(function(){toast('Paramètres enregistrés');}).catch(function(){toast('Impossible d’enregistrer les paramètres');});
+  });
+  function appliquerTheme(theme){
+    if(!['auto','light','dark'].includes(theme))theme='auto';
+    if(theme==='auto')document.documentElement.removeAttribute('data-theme');
+    else document.documentElement.setAttribute('data-theme',theme);
+    document.getElementById('themeSelect').value=theme;
+    try{localStorage.setItem('mdd-theme',theme);}catch(e){}
+  }
+  var themeActuel='auto';try{themeActuel=localStorage.getItem('mdd-theme')||'auto';}catch(e){}
+  appliquerTheme(themeActuel);
+  document.getElementById('themeSelect').addEventListener('change',function(e){appliquerTheme(e.target.value);});
+  document.getElementById('btnTheme').addEventListener('click',function(){appliquerTheme(document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark');});
+  window.addEventListener('offline',function(){toast('Hors connexion : les modifications peuvent échouer');});
+  window.addEventListener('online',function(){toast('Connexion rétablie');});
+
   // ---------- INIT (après connexion) ----------
   function init(uid) {
     db = createUserStore(uid);
@@ -2201,6 +2404,9 @@
     unsubscribers.push(db.doc('reglages/boutique').onSnapshot(function (snap) {
       var data = snap.data();
       shopNameEl.textContent = (data && data.nom) ? data.nom : 'MDD-Shôp';
+      document.getElementById('paramNom').value = shopNameEl.textContent;
+      document.getElementById('paramTelephone').value = data && data.telephone || '';
+      document.getElementById('paramAdresse').value = data && data.adresse || '';
     }, function () {}));
 
     unsubscribers.push(db.collection('produits').onSnapshot(function (snap) {
@@ -2231,6 +2437,7 @@
       state.produits = []; state.ventes = []; state.depenses = [];
       init(user.uid);
     } else {
+      state.produits=[];state.ventes=[];state.depenses=[];panier=[];renderPanier();
       document.getElementById('app').style.display = 'none';
       document.getElementById('authScreen').style.display = 'flex';
     }

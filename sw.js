@@ -1,4 +1,4 @@
-const CACHE = 'mdd-shop-v2';
+const CACHE = 'mdd-shop-v6-responsive-20261110';
 const SHELL = ['./', './index.html', './manifest.json', './logo.png', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', (e) => {
