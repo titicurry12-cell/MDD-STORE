@@ -840,7 +840,11 @@
         <h2>Répertoire clients</h2>
         <p class="section-intro">Retrouve les clients associés aux ventes et aux crédits. Les ventes sans nom de client ne sont pas attribuées.</p>
         <div class="field"><input type="search" id="clientSearch" placeholder="Rechercher un client..."></div>
-        <div id="clientsList"></div>
+        <div class="field"><label for="clientNomFiche">Nom du client</label><input id="clientNomFiche" maxlength="100" placeholder="Nom complet"></div>
+        <div class="field"><label for="clientTelephoneFiche">Téléphone</label><input id="clientTelephoneFiche" type="tel" maxlength="35" placeholder="+224 ..."></div>
+        <div class="field"><label for="clientNotesFiche">Notes (facultatif)</label><textarea id="clientNotesFiche" maxlength="500" rows="2" placeholder="Informations utiles"></textarea></div>
+        <button type="button" class="btn primary" id="btnAjouterClient">Enregistrer la fiche client</button>
+        <div id="clientsList" style="margin-top:16px"></div>
       </section>
     </section>
 
@@ -852,6 +856,9 @@
         <div class="field"><label for="paramTelephone">Téléphone</label><input id="paramTelephone" type="tel" maxlength="35" placeholder="+224 ..."></div>
         <div class="field"><label for="paramAdresse">Adresse</label><input id="paramAdresse" maxlength="160" placeholder="Conakry, Guinée"></div>
         <button class="btn primary" id="btnSauverParametres">Enregistrer les paramètres</button>
+        <h2 style="margin-top:24px">Mouvements de stock</h2>
+        <p class="section-intro">Dernières ventes et modifications de stock enregistrées depuis cette version.</p>
+        <div id="mouvementsList" aria-live="polite"></div>
         <h2 style="margin-top:24px">Apparence</h2>
         <div class="field"><label for="themeSelect">Thème</label><select id="themeSelect"><option value="auto">Automatique (téléphone)</option><option value="light">Clair</option><option value="dark">Sombre</option></select></div>
         <p class="info-note">Les paramètres de la boutique sont synchronisés avec ton compte Firebase. Le thème est mémorisé sur ce téléphone.</p>
@@ -927,10 +934,16 @@
       <label for="authPassword">Mot de passe</label>
       <input type="password" id="authPassword" autocomplete="current-password" placeholder="6 caractères minimum">
     </div>
-    <div id="authError" style="color:var(--danger); font-size:0.82rem; margin-bottom:8px; display:none;"></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin:-3px 0 16px;">
+      <label for="afficherMotDePasse" style="display:flex;align-items:center;gap:8px;font-size:.86rem;cursor:pointer;color:var(--ink-soft);"><input type="checkbox" id="afficherMotDePasse" style="width:18px;height:18px;accent-color:#C59A3C;"> Afficher le mot de passe</label>
+      <button type="button" id="btnMotDePasseOublie" style="background:none;border:0;padding:10px 0;color:var(--gold, #D6AE55);text-decoration:underline;cursor:pointer;font-size:.86rem;">Mot de passe oublié ?</button>
+    </div>
+    <div id="authInfo" role="status" aria-live="polite" style="display:none;padding:12px;border:1px solid #6FAD8C;border-radius:12px;color:var(--ink);margin-bottom:12px;font-size:.88rem;"></div>
+    <div id="authError" role="alert" style="color:var(--danger); font-size:0.82rem; margin-bottom:8px; display:none;"></div>
 
     <button class="btn primary" id="btnSeConnecter">Se connecter</button>
-    <button class="btn ghost" id="btnCreerCompte" style="text-align:center; border:1px solid var(--line);">Créer un compte</button>
+    <button type="button" class="btn ghost" id="btnCreerCompte" style="display:none;">Créer un compte</button>
+    <p style="font-size:.8rem;text-align:center;color:var(--ink-soft);margin:12px 0 0;">Accès réservé aux comptes autorisés de MDD-Shôp.</p>
   </div>
 </div>
 
@@ -1053,7 +1066,7 @@
   var firestore = firebase.firestore();
   var unsubscribers = [];
 
-  var state = { produits: [], ventes: [], depenses: [], stockFilter: 'Tout', periode: 'jour', editingId: null };
+  var state = { produits: [], ventes: [], depenses: [], clients: [], mouvements: [], stockFilter: 'Tout', periode: 'jour', editingId: null };
   var db = null;
 
   function showConfirm(message, onYes) {
@@ -1479,6 +1492,14 @@
   document.getElementById('btnFermerSheet').addEventListener('click', closeProduitSheet);
   sheetProduit.addEventListener('click', function (e) { if (e.target === sheetProduit) closeProduitSheet(); });
 
+  function enregistrerProduitAvecJournal(ref, data, ancien) {
+    var batch = firestore.batch();
+    batch.set(ref, data);
+    var mouvementRef = db.collection('mouvements').doc();
+    batch.set(mouvementRef, {type:ancien?'ajustement':'arrivage',produitId:ref.id,libelle:data.nom,quantiteAvant:ancien?quantiteTotale(ancien):0,quantiteApres:quantiteTotale(data),timestamp:Date.now(),date:todayStr()});
+    return batch.commit();
+  }
+
   document.getElementById('btnSauverProduit').addEventListener('click', function () {
     var nom = document.getElementById('fNom').value.trim();
     if (!nom) { toast('Donnez un nom à l\'article'); return; }
@@ -1518,7 +1539,7 @@
       var data = Object.assign({}, champsCommuns, { couleur: 'Standard', tailles: res.variantes });
       var cible = docExistant ? docExistant.id : null;
       var ref = cible ? db.collection('produits').doc(cible) : db.collection('produits').doc();
-      ref.set(data).then(function () {
+      enregistrerProduitAvecJournal(ref, data, docExistant).then(function () {
         toast('Article enregistré');
         closeProduitSheet();
       }).catch(function () { toast('Erreur : article non enregistré'); });
@@ -1555,7 +1576,7 @@
     var data = Object.assign({}, champsCommuns, { tailles: taillesNouvelles });
     var cible = docExistant ? docExistant.id : null;
     var ref = cible ? db.collection('produits').doc(cible) : db.collection('produits').doc();
-    ref.set(data).then(function () {
+    enregistrerProduitAvecJournal(ref, data, docExistant).then(function () {
       toast('Article enregistré');
       closeProduitSheet();
     }).catch(function () { toast('Erreur : article non enregistré'); });
@@ -1565,7 +1586,13 @@
     if (!state.editingId || !db) return;
     var idToDelete = state.editingId;
     showConfirm('Supprimer définitivement cet article ?', function () {
-      db.collection('produits').doc(idToDelete).delete().then(function () {
+      (function(){
+        var ancien = state.produits.find(function(p){return p.id===idToDelete;});
+        var batch=firestore.batch();
+        batch.delete(db.collection('produits').doc(idToDelete));
+        batch.set(db.collection('mouvements').doc(),{type:'suppression',produitId:idToDelete,libelle:ancien?ancien.nom:'Article supprimé',quantiteAvant:ancien?quantiteTotale(ancien):0,quantiteApres:0,timestamp:Date.now(),date:todayStr()});
+        return batch.commit();
+      })().then(function () {
         toast('Article supprimé');
         closeProduitSheet();
       }).catch(function () { toast('Erreur lors de la suppression'); });
@@ -1776,6 +1803,8 @@
         });
         refs.forEach(function(ref){tx.update(ref, {tailles:modifs[ref.id]});});
         tx.set(venteRef, vente);
+        var mouvementRef = db.collection('mouvements').doc();
+        tx.set(mouvementRef, {type:'vente', reference:venteRef.id, libelle:'Vente de '+lignes.length+' ligne(s)', articles:lignes.map(function(l){return {produitId:l.produitId,nom:l.nom,couleur:l.couleur,taille:l.taille,quantite:-l.quantite};}), timestamp:Date.now(),date:todayStr()});
       });
     }).then(function(){
       toast('Vente enregistrée'); derniereVente = vente;
@@ -2297,6 +2326,7 @@
     renderDepenses();
     renderHistorique();
     renderClients();
+    renderMouvements();
     if (document.getElementById('view-vente').classList.contains('active')) fillVenteSelect();
   }
 
@@ -2398,7 +2428,9 @@
       'auth/too-many-requests': "Trop de tentatives, réessaie dans un instant.",
       'auth/network-request-failed': "Pas de connexion internet.",
       'auth/operation-not-allowed': "La connexion par e-mail n'est pas activée.",
-      'auth/unauthorized-domain': "Ce site n'est pas encore autorisé dans Firebase."
+      'auth/unauthorized-domain': "Ce site n'est pas encore autorisé dans Firebase.",
+      'auth/user-disabled': "Ce compte a été désactivé.",
+      'auth/invalid-action-code': "Ce lien a expiré ou a déjà été utilisé."
     };
     return messages[code] || "Une erreur est survenue. Réessaie.";
   }
@@ -2463,6 +2495,46 @@
     lancerAuth('creation', 'Créer un compte', 'Création...');
   });
 
+  // Récupération de compte : Firebase envoie un lien, jamais un mot de passe.
+  var recuperationEnCours = false;
+  document.getElementById('afficherMotDePasse').addEventListener('change', function () {
+    document.getElementById('authPassword').type = this.checked ? 'text' : 'password';
+  });
+  ['authEmail', 'authPassword'].forEach(function (id) {
+    document.getElementById(id).addEventListener('keydown', function (event) {
+      if (event.key === 'Enter') { event.preventDefault(); document.getElementById('btnSeConnecter').click(); }
+    });
+  });
+  document.getElementById('btnMotDePasseOublie').addEventListener('click', function () {
+    if (recuperationEnCours || authEnCours) return;
+    clearAuthError();
+    var info = document.getElementById('authInfo');
+    info.style.display = 'none';
+    var email = document.getElementById('authEmail').value.trim();
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      showAuthError('Saisis ton adresse e-mail valide ci-dessus pour recevoir un lien de réinitialisation.');
+      document.getElementById('authEmail').focus();
+      return;
+    }
+    var bouton = this;
+    recuperationEnCours = true;
+    bouton.disabled = true;
+    bouton.textContent = 'Envoi en cours…';
+    auth.sendPasswordResetEmail(email).then(function () {
+      info.textContent = 'Si un compte correspond à cette adresse, tu recevras un e-mail de réinitialisation. Vérifie aussi les spams.';
+      info.style.display = 'block';
+    }).catch(function (erreur) {
+      if (erreur && (erreur.code === 'auth/user-not-found' || erreur.code === 'auth/invalid-credential')) {
+        info.textContent = 'Si un compte correspond à cette adresse, tu recevras un e-mail de réinitialisation. Vérifie aussi les spams.';
+        info.style.display = 'block';
+      } else showAuthError(traduireErreurAuth(erreur && erreur.code));
+    }).finally(function () {
+      recuperationEnCours = false;
+      bouton.disabled = false;
+      bouton.textContent = 'Mot de passe oublié ?';
+    });
+  });
+
   document.getElementById('btnDeconnexion').addEventListener('click', function () {
     showConfirm('Se déconnecter de ton compte ?', function () {
       auth.signOut();
@@ -2473,21 +2545,47 @@
   function renderClients() {
     var map = new Map();
     state.ventes.forEach(function(v) {
-      var nom = String(v.clientNom || '').trim();
-      if (!nom) return;
-      var cle = nom.toLocaleLowerCase('fr');
-      if (!map.has(cle)) map.set(cle,{nom:nom, achats:0, total:0, dette:0, dernier:0});
-      var c=map.get(cle);
-      c.achats++;c.total+=Number(v.total||0);c.dette+=Number(v.resteAPayer||0);
-      c.dernier=Math.max(c.dernier,Number(v.timestamp||0));
+      var nom=String(v.clientNom||'').trim(); if(!nom)return;
+      var cle=nom.toLocaleLowerCase('fr');
+      if(!map.has(cle))map.set(cle,{nom:nom,achats:0,total:0,dette:0,dernier:0,telephone:'',notes:''});
+      var c=map.get(cle);c.achats++;c.total+=Number(v.total||0);c.dette+=Number(v.resteAPayer||0);c.dernier=Math.max(c.dernier,Number(v.timestamp||0));
+    });
+    state.clients.forEach(function(f){
+      var cle=String(f.nom||'').trim().toLocaleLowerCase('fr');if(!cle)return;
+      if(!map.has(cle))map.set(cle,{nom:f.nom,achats:0,total:0,dette:0,dernier:0});
+      var c=map.get(cle);c.nom=f.nom;c.telephone=f.telephone||'';c.notes=f.notes||'';c.ficheId=f.id;
     });
     var terme=document.getElementById('clientSearch').value.trim().toLocaleLowerCase('fr');
-    var clients=Array.from(map.values()).filter(function(c){return c.nom.toLocaleLowerCase('fr').includes(terme);}).sort(function(a,b){return b.dernier-a.dernier;});
+    var clients=Array.from(map.values()).filter(function(c){return (c.nom+' '+(c.telephone||'')).toLocaleLowerCase('fr').includes(terme);}).sort(function(a,b){return b.dernier-a.dernier||a.nom.localeCompare(b.nom);});
     document.getElementById('clientsList').innerHTML=clients.length?clients.map(function(c){
       return '<div class="client-card"><strong>'+escapeHtml(c.nom)+'</strong>'+(c.dette>0?' <span class="badge">Crédit en cours</span>':'')+
+      (c.telephone?'<div class="client-meta">Téléphone : '+escapeHtml(c.telephone)+'</div>':'')+
+      (c.notes?'<div class="client-meta">'+escapeHtml(c.notes)+'</div>':'')+
       '<div class="client-meta">'+c.achats+' achat(s) · Dernier : '+(c.dernier?new Date(c.dernier).toLocaleDateString('fr-FR'):'—')+'</div>'+
       '<div class="client-totals"><span>Total : <strong>'+fmt(c.total)+'</strong></span><span>À recevoir : <strong>'+fmt(c.dette)+'</strong></span></div></div>';
-    }).join(''):'<p class="empty">Aucun client trouvé. Ajoute un nom lors de la vente pour constituer ton répertoire.</p>';
+    }).join(''):'<p class="empty">Aucun client trouvé.</p>';
+  }
+  document.getElementById('btnAjouterClient').addEventListener('click',function(){
+    if(!db){toast('Connecte-toi d’abord');return;}
+    var nom=document.getElementById('clientNomFiche').value.trim();
+    var telephone=document.getElementById('clientTelephoneFiche').value.trim();
+    var notes=document.getElementById('clientNotesFiche').value.trim();
+    if(!nom){toast('Indique le nom du client');return;}
+    var existant=state.clients.find(function(c){return c.nom.trim().toLocaleLowerCase('fr')===nom.toLocaleLowerCase('fr');});
+    var bouton=document.getElementById('btnAjouterClient');bouton.disabled=true;
+    var ref=existant?db.collection('clients').doc(existant.id):db.collection('clients').doc();
+    ref.set({nom:nom,telephone:telephone,notes:notes,updatedAt:Date.now()},{merge:true}).then(function(){
+      toast('Fiche client enregistrée');
+      ['clientNomFiche','clientTelephoneFiche','clientNotesFiche'].forEach(function(id){document.getElementById(id).value='';});
+    }).catch(function(e){toast('Erreur fiche client : '+(e.code||e.message||'inconnue'));}).finally(function(){bouton.disabled=false;});
+  });
+  function renderMouvements(){
+    var el=document.getElementById('mouvementsList');
+    var liste=state.mouvements.slice().sort(function(a,b){return Number(b.timestamp||0)-Number(a.timestamp||0);}).slice(0,40);
+    el.innerHTML=liste.length?liste.map(function(m){
+      var detail=m.type==='vente'?(m.articles||[]).map(function(a){return escapeHtml(a.nom)+' ('+a.quantite+')';}).join(', '):'Stock : '+Number(m.quantiteAvant||0)+' → '+Number(m.quantiteApres||0);
+      return '<div class="mini-row"><div class="who"><span>'+escapeHtml(m.libelle||m.type||'Mouvement')+'</span><span>'+escapeHtml(m.date||'')+' · '+detail+'</span></div></div>';
+    }).join(''):'<p class="empty">Les prochains mouvements de stock apparaîtront ici.</p>';
   }
   document.getElementById('clientSearch').addEventListener('input',renderClients);
   document.getElementById('btnSauverParametres').addEventListener('click',function(){
@@ -2522,6 +2620,13 @@
       document.getElementById('paramAdresse').value = data && data.adresse || '';
     }, function () {}));
 
+    unsubscribers.push(db.collection('clients').onSnapshot(function(snap){
+      state.clients=snap.docs.map(function(d){return Object.assign({id:d.id},d.data());});renderClients();
+    },function(){toast('Erreur de synchronisation des clients');}));
+    unsubscribers.push(db.collection('mouvements').onSnapshot(function(snap){
+      state.mouvements=snap.docs.map(function(d){return Object.assign({id:d.id},d.data());});renderMouvements();
+    },function(){toast('Erreur de synchronisation du journal');}));
+
     unsubscribers.push(db.collection('produits').onSnapshot(function (snap) {
       state.produits = snap.docs.map(function (d) { return Object.assign({ id: d.id }, d.data()); });
       renderAll();
@@ -2547,10 +2652,10 @@
       document.getElementById('app').style.display = 'flex';
       document.getElementById('authEmail').value = '';
       document.getElementById('authPassword').value = '';
-      state.produits = []; state.ventes = []; state.depenses = [];
+      state.produits = []; state.ventes = []; state.depenses = []; state.clients=[]; state.mouvements=[];
       init(user.uid);
     } else {
-      state.produits=[];state.ventes=[];state.depenses=[];panier=[];renderPanier();
+      state.produits=[];state.ventes=[];state.depenses=[];state.clients=[];state.mouvements=[];panier=[];renderPanier();
       document.getElementById('app').style.display = 'none';
       document.getElementById('authScreen').style.display = 'flex';
     }
